@@ -38,7 +38,7 @@ const AuthCallback = () => {
         localStorage.removeItem('token');
         navigate('/login?error=auth_failed');
       });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <Loader message="Signing you in with Google..." />;
 };
