@@ -2,7 +2,6 @@ import React from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
-import { Badge } from 'primereact/badge';
 import { useNavigate } from 'react-router-dom';
 import { formatDiscount, formatDate, categoryColors, categoryIcons, daysRemaining } from '../../utils/helpers';
 

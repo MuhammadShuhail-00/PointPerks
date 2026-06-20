@@ -1,10 +1,9 @@
 import React, { useRef } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Menubar } from 'primereact/menubar';
 import { Avatar } from 'primereact/avatar';
 import { Badge } from 'primereact/badge';
 import { Menu } from 'primereact/menu';
-import { Divider } from 'primereact/divider';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../../store/slices/authSlice';
 import useAuth from '../../hooks/useAuth';
