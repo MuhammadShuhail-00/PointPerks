@@ -3,6 +3,7 @@ const Referral = require('../models/Referral.model');
 
 const SIGNUP_BONUS = parseInt(process.env.SIGNUP_BONUS_POINTS) || 100;
 const REFERRAL_REWARD = parseInt(process.env.REFERRAL_REWARD_POINTS) || 50;
+const REFERRAL_BONUS = parseInt(process.env.REFERRAL_BONUS_POINTS) || 100;
 
 /**
  * Award signup bonus to a new user
@@ -40,6 +41,17 @@ const processReferral = async (referrerId, referredUserId, referralCode) => {
     'bonus',
     referralCode
   );
+
+  // Add points to referred user
+  const referredUser = await User.findById(referredUserId);
+  if (referredUser) {
+    await referredUser.addPoints(
+      REFERRAL_BONUS,
+      `Bonus for signing up with a referral code`,
+      'bonus',
+      referralCode
+    );
+  }
 
   // Increment referral count
   await User.findByIdAndUpdate(referrerId, { $inc: { referralCount: 1 } });
