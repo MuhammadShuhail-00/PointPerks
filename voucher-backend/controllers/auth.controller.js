@@ -43,18 +43,20 @@ const register = async (req, res) => {
     }
   }
 
-  const token = generateAccessToken(user);
+  // Re-fetch to get updated points after referral bonus
+  const freshUser = await User.findById(user._id);
+  const token = generateAccessToken(freshUser);
 
   return sendSuccess(res, {
     token,
     user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      points: user.points,
-      referralCode: user.referralCode,
-      avatar: user.avatar,
+      id: freshUser._id,
+      name: freshUser.name,
+      email: freshUser.email,
+      role: freshUser.role,
+      points: freshUser.points,
+      referralCode: freshUser.referralCode,
+      avatar: freshUser.avatar,
     },
   }, 'Registration successful', 201);
 };
