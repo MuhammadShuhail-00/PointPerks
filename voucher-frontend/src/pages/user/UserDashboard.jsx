@@ -192,10 +192,35 @@ const UserDashboard = () => {
           .pp-dash-wallet-btns { flex-direction: column; width: 100%; }
           .pp-dash-wallet-btns button { width: 100%; justify-content: center; }
           .pp-dash-stats { grid-template-columns: 1fr !important; }
-          .pp-dash-redemptions-head { flex-direction: column; align-items: flex-start !important; gap: 8px; }
           .pp-voucher-carousel-card { min-width: 280px !important; height: 200px !important; padding: 20px !important; }
           .pp-voucher-head { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
-        }
+
+          /* Redemption item mobile fix */
+          .pp-redemption-item {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            padding: 12px !important;
+          }
+          .pp-redemption-item > div:first-child {
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+            gap: 10px !important;
+          }
+          .pp-redemption-item > div:first-child > div:first-child {
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .pp-redemption-item > div:first-child > div:first-child > span {
+            font-size: 20px !important;
+          }
+          .pp-redemption-item > span {
+            font-size: 11px !important;
+            padding: 5px 14px !important;
+            letter-spacing: 0.06em !important;
+            align-self: flex-start !important;
+            margin-left: auto !important;
+          }
+}
       `}</style>
 
       {/* ── Header ── */}
