@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
@@ -34,6 +34,36 @@ const C = {
   successText: '#166534',
 };
 
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1000) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+
+  useEffect(() => {
+    const numTarget = parseInt(String(target).replace(/,/g, ''), 10) || 0;
+    if (numTarget === 0) { setDisplay(0); return; }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setDisplay(numTarget); return; }
+
+    startRef.current = null;
+    const step = (timestamp) => {
+      if (!startRef.current) startRef.current = timestamp;
+      const elapsed = timestamp - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * numTarget));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return display.toLocaleString();
+}
+
 /* ── Uniform Styles for User Pages ─────────────────────────────── */
 const styles = {
   pageContainer: {
@@ -41,7 +71,6 @@ const styles = {
     minHeight: '100%',
     fontFamily: "'Inter', sans-serif",
     color: C.onSurfaceVariant,
-    padding: '32px 48px',
     maxWidth: 1400,
     margin: '0 auto',
     boxSizing: 'border-box',
@@ -113,6 +142,9 @@ const ppStyles = `
   
   .pp-col-left { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
   .pp-col-right { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+  
+  /* ✅ FIX 1: Added flex and gap to sticky so the cards inside have space */
+  .pp-sticky { display: flex; flex-direction: column; gap: 24px; }
   @media (min-width: 1024px) { .pp-sticky { position: sticky; top: 80px; } }
 
   .pp-card-pad { padding: 24px; }
@@ -150,9 +182,44 @@ const ppStyles = `
   .pp-divider:last-of-type { border-bottom: none; }
   .pp-div-val { font-weight: 700; color: ${C.primary}; }
   .pp-status-tag { padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: ${C.secondaryContainer}; color: #715300; }
-  .pp-status-active { background: ${C.tertiaryContainer}; color: #adc6ff; }
+  
+  /* ✅ FIX 2: Changed active status to green */
+  .pp-status-active { background: ${C.successBg}; color: ${C.successText}; }
+  
   .pp-status-expired { background: ${C.errorContainer}; color: #93000a; }
   .pp-status-unavail { background: ${C.surfaceContainerHighest}; color: ${C.onSurfaceVariant}; }
+
+  /* Balance Card */
+  .pp-balance-card {
+    background: linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: ${C.white};
+    border: 1px solid ${C.outlineVariant};
+    box-shadow: 0 4px 20px rgba(2, 36, 72, 0.15);
+    position: relative;
+    overflow: hidden;
+    margin-top: 0px;
+  }
+  .pp-balance-glow {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    background: rgba(255, 193, 7, 0.2);
+    border-radius: '50%';
+    filter: blur(50px);
+    pointer-events: none;
+  }
+  .pp-balance-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .pp-balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 'rgba(255,255,255,0.7)'; font-weight: 600; }
+  .pp-balance-value { font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: ${C.secondaryFixed}; line-height: 1.1; display: flex; align-items: flex-end; gap: 4px; }
+  .pp-balance-pts-label { font-size: 12px; color: 'rgba(255,255,255,0.5)'; font-weight: 500; margin-bottom: 2px; }
+  .pp-balance-bar-wrap { margin-top: 16px; }
+  .pp-balance-bar { height: 6px; width: 100%; background: 'rgba(255,255,255,0.15)'; border-radius: 9999px; overflow: hidden; }
+  .pp-balance-bar-fill { height: 100%; background: linear-gradient(90deg, ${C.secondaryContainer}, ${C.secondaryFixed}); border-radius: 9999px; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pp-balance-note { font-size: 12px; color: 'rgba(255,255,255,0.6)'; margin-top: 12px; font-weight: 500; line-height: 1.4; }
 
   /* Buttons */
   .pp-btn { width: 100%; padding: 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; border: none; transition: all 0.2s; }
@@ -169,7 +236,7 @@ const ppStyles = `
   .voucher-blur { position: absolute; right: -32px; top: -32px; width: 128px; height: 128px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(20px); }
   .voucher-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 8px; }
   .voucher-label { color: #adc8f5; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-  .voucher-title { font-weight: 700; font-size: 24px; font-family: 'Poppins', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .voucher-title { font-weight: 700; font-size: 24px; font-family: 'Poppins', sans-serif; white-space: nowrap; overflow: hidden; textOverflow: ellipsis; }
   .voucher-body { background: ${C.white}; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 8px; }
   .voucher-qr-box { width: 160px; height: 160px; background: ${C.surfaceContainerHighest}; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
   .voucher-code-text { color: ${C.primary}; font-weight: 700; font-size: 24px; font-family: 'Poppins', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; word-break: break-all; }
@@ -179,11 +246,6 @@ const ppStyles = `
   .cut-off-line::before { left: -34px; }
   .cut-off-line::after { right: -34px; }
   @media (max-width: 560px) { .cut-off-line::before, .cut-off-line::after { display: none; } }
-
-  /* Progress */
-  .pp-progress-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 500; color: ${C.onSurfaceVariant}; }
-  .pp-progress-bar { height: 8px; width: 100%; background: ${C.surfaceContainerHighest}; border-radius: 9999px; overflow: hidden; }
-  .pp-progress-fill { height: 100%; background: ${C.secondaryContainer}; border-radius: 9999px; transition: width 0.5s ease; }
 
   /* Modal */
   .pp-modal-overlay { position: fixed; inset: 0; background: rgba(2, 36, 72, 0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; animation: pp-fade-in 0.2s ease; }
@@ -196,7 +258,7 @@ const ppStyles = `
   .pp-btn-outline-modal:hover { background: ${C.surfaceLow}; }
 
   /* Icons & Utilities */
-  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   .pp-skeleton { background: ${C.surfaceContainerHighest}; position: relative; overflow: hidden; border-radius: 12px; }
   .pp-skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); animation: pp-shimmer 1.5s infinite; }
   
@@ -219,6 +281,10 @@ const VoucherDetail = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [newRedemption, setNewRedemption] = useState(null);
 
+  // ✅ All hooks called before any conditional returns
+  const animCost = useCountUp(voucher?.pointsCost || 0, 800);
+  const animBalance = useCountUp(user?.points || 0, 1200);
+
   const ms = (size = 24, fill = 0) => ({
     fontFamily: "'Material Symbols Outlined'",
     fontSize: size,
@@ -239,7 +305,7 @@ const VoucherDetail = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchVoucher(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchVoucher(); }, [id]);
 
   const handleRedeem = async () => {
     setRedeeming(true);
@@ -300,7 +366,7 @@ const VoucherDetail = () => {
     : 100;
 
   return (
-    <div sfyle={styles.pageContainer}>
+    <div style={styles.pageContainer}>
       <style>{ppStyles}</style>
       
       {/* BREADCRUMB */}
@@ -319,7 +385,7 @@ const VoucherDetail = () => {
         </span>
       </nav>
 
-      {/* PLAIN HEADER (No Card) */}
+      {/* PLAIN HEADER */}
       <div style={styles.header}>
         <h1 style={styles.title}>Voucher Detail</h1>
         <p style={styles.subtitle}>View voucher details, terms, and redeem your points.</p>
@@ -433,12 +499,12 @@ const VoucherDetail = () => {
                   <p className="pp-label">Points Cost</p>
                   <div className="pp-points">
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
-                    <span>{voucher.pointsCost > 0 ? voucher.pointsCost.toLocaleString() : 'Free'}</span>
+                    <span>{animCost} pts</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '32px' }}>
+              <div style={{ marginBottom: '0' }}>
                 <div className="pp-divider">
                   <span style={{ color: C.onSurfaceVariant }}>Voucher ID</span>
                   <span className="pp-div-val">{voucher.code || (voucher._id ? `VCH-${voucher._id.slice(-6).toUpperCase()}` : '—')}</span>
@@ -475,7 +541,7 @@ const VoucherDetail = () => {
                         <p className="voucher-label">Active Voucher</p>
                         <p className="voucher-title">{voucher.title}</p>
                       </div>
-                      <span className="material-symbols-outlined" style={{ fontSize: '32px', color: C.secondaryContainer, flexShrink: 0 }}>verified</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px', color: C.secondaryFixed, flexShrink: 0 }}>verified</span>
                     </div>
                     <div className="voucher-body">
                       <div className="voucher-qr-box">
@@ -520,7 +586,7 @@ const VoucherDetail = () => {
                     <span className="material-symbols-outlined">lock</span>
                     Need {(voucher.pointsCost - (user?.points || 0)).toLocaleString()} more pts
                   </button>
-                  <p className="pp-btn-note">You have {(user?.points || 0).toLocaleString()} points.</p>
+                  <p className="pp-btn-note">You have {animBalance} points.</p>
                 </div>
               ) : (
                 <div>
@@ -528,29 +594,32 @@ const VoucherDetail = () => {
                     <span className="material-symbols-outlined">shopping_cart_checkout</span>
                     Redeem Now
                   </button>
-                  <p className="pp-btn-note">By clicking redeem, {voucher.pointsCost.toLocaleString()} points will be deducted from your wallet.</p>
+                  <p className="pp-btn-note">By clicking redeem, {animCost} points will be deducted from your wallet.</p>
                 </div>
               )}
             </div>
 
-                        {/* Progress Card */}
-            <div style={{ ...styles.uniformCard }} className="pp-card-pad">
-              <div className="pp-progress-head">
-                <span>Your Balance</span>
-                <span style={{ fontWeight: 700, color: C.primary, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span className="material-symbols-outlined" style={{ color: C.secondary, fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>stars</span>
-                  {(user?.points || 0).toLocaleString()} pts
-                </span>
+            {/* Balance Card */}
+            <div className="pp-balance-card">
+              <div className="pp-balance-glow" />
+              <div className="pp-balance-head">
+                <span className="pp-balance-label">Your Balance</span>
+                <div className="pp-balance-value">
+                  <span className="material-symbols-outlined" style={{ color: C.secondaryFixed, fontSize: '20px', fontVariationSettings: "'FILL' 1", marginRight: '4px' }}>stars</span>
+                  {animBalance}
+                </div>
               </div>
-              <div className="pp-progress-bar">
-                <div className="pp-progress-fill" style={{ width: `${progressPct}%` }} />
+              <div className="pp-balance-bar-wrap">
+                <div className="pp-balance-bar">
+                  <div className="pp-balance-bar-fill" style={{ width: `${progressPct}%` }} />
+                </div>
               </div>
-              <p style={{ margin: '8px 0 0 0', fontSize: '12px', fontWeight: 600, color: C.onSurfaceVariant }}>
+              <p className="pp-balance-note">
                 {voucher.pointsCost === 0
                   ? 'This voucher is free to redeem.'
                   : canAfford
                     ? 'You have enough points to redeem this voucher.'
-                    : `${(voucher.pointsCost - (user?.points || 0)).toLocaleString()} more points needed.`}
+                    : `You need ${animCost} points. ${(voucher.pointsCost - (user?.points || 0)).toLocaleString()} more to go.`}
               </p>
             </div>
           </div>
@@ -566,8 +635,8 @@ const VoucherDetail = () => {
               <h3 className="pp-modal-title">Confirm redemption</h3>
             </div>
             <p className="pp-modal-body">
-              This will use <strong style={{ color: C.primary }}>{voucher.pointsCost.toLocaleString()} points</strong> from
-              your balance of {(user?.points || 0).toLocaleString()} points. This action cannot be undone, but you can cancel for a refund later.
+              This will use <strong style={{ color: C.primary }}>{animCost} points</strong> from
+              your balance of {animBalance} points. This action cannot be undone, but you can cancel for a refund later.
             </p>
             <div className="pp-modal-actions">
               <button onClick={() => setConfirmOpen(false)} disabled={redeeming} className="pp-btn-outline-modal">
@@ -590,7 +659,15 @@ const VoucherDetail = () => {
 
       <style>{`
         @media (max-width: 768px) { 
-          div[style*="padding: 32px 48px"] { padding: 24px 16px !important; } 
+          .pp-page-container { padding: 0 16px 48px !important; }
+          .pp-hero { height: 320px !important; }
+          .pp-hero-icon { width: 72px !important; height: 72px !important; }
+          .pp-hero-content { padding: 16px !important; }
+          .pp-title-xl { font-size: 28px !important; }
+          .pp-subtitle { font-size: 15px !important; }
+          .pp-value-xl { font-size: 32px !important; }
+          .pp-points { font-size: 20px !important; }
+          .pp-balance-value { font-size: 26px !important; }
         }
       `}</style>
     </div>

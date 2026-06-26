@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -28,6 +28,36 @@ const C = {
   error: '#ba1a1a',
   errorContainer: '#ffdad6',
 };
+
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1000) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+
+  useEffect(() => {
+    const numTarget = parseInt(String(target).replace(/,/g, ''), 10) || 0;
+    if (numTarget === 0) { setDisplay(0); return; }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setDisplay(numTarget); return; }
+
+    startRef.current = null;
+    const step = (timestamp) => {
+      if (!startRef.current) startRef.current = timestamp;
+      const elapsed = timestamp - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * numTarget));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return display.toLocaleString();
+}
 
 /* ── Shared styles (no container padding — layout handles that) ── */
 const styles = {
@@ -69,14 +99,15 @@ const styles = {
 };
 
 const ppStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
   .pp-header { display: flex; flex-direction: column; gap: 24px; align-items: flex-start; background: ${C.surfaceContainerLowest}; padding: 24px; border-radius: 12px; box-shadow: 0px 4px 20px rgba(30, 58, 95, 0.04); margin-bottom: 24px; border: 1px solid ${C.surfaceVariant}; }
   @media (min-width: 768px) { .pp-header { flex-direction: row; align-items: center; } }
 
   .pp-avatar-wrap { position: relative; flex-shrink: 0; }
   .pp-avatar { width: 96px; height: 96px; border-radius: 9999px; overflow: hidden; border: 4px solid ${C.surfaceContainerHigh}; background: ${C.primary}; color: ${C.white}; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; font-family: 'Poppins', sans-serif; }
-  .pp-avatar-btn { position: absolute; bottom: 0; right: 0; background: ${C.primary}; color: ${C.white}; padding: 8px; border-radius: 9999px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
-  .pp-avatar-btn:hover { transform: scale(1.1); }
-
+  
   .pp-header-info { flex: 1; text-align: center; }
   @media (min-width: 768px) { .pp-header-info { text-align: left; } }
 
@@ -90,7 +121,7 @@ const ppStyles = `
 
   .pp-card { background: ${C.surfaceContainerLowest}; padding: 24px; border-radius: 12px; box-shadow: 0px 4px 20px rgba(30, 58, 95, 0.04); border: 1px solid ${C.surfaceVariant}; }
   .pp-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid ${C.surfaceVariant}; padding-bottom: 8px; color: ${C.primary}; }
-  .pp-card-title { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 600; margin: 0; }
+  .pp-card-title { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; margin: 0; }
 
   .pp-form-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
   @media (min-width: 768px) { .pp-form-grid { grid-template-columns: 1fr 1fr; } }
@@ -102,13 +133,41 @@ const ppStyles = `
 
   .pp-link-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background 0.2s; text-decoration: none; color: ${C.onSurfaceVariant}; }
   .pp-link-row:hover { background: ${C.surfaceContainerLow}; }
-  .pp-link-title { font-size: 14px; font-weight: 500; flex: 1; color: ${C.onSurface}; }
+  .pp-link-title { font-size: 15px; font-weight: 500; flex: 1; color: ${C.onSurface}; }
 
-  .pp-loyalty-card { background: linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 100%); padding: 24px; border-radius: 12px; color: ${C.white}; position: relative; overflow: hidden; box-shadow: 0 10px 15px rgba(2, 36, 72, 0.1); }
+  /* Loyalty Card - Simplified & Clean */
+  .pp-loyalty-card { 
+    background: linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 100%); 
+    padding: 32px 24px; 
+    border-radius: 12px; 
+    color: ${C.white}; 
+    position: relative; 
+    overflow: hidden; 
+    box-shadow: 0 10px 15px rgba(2, 36, 72, 0.15); 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    min-height: 240px;
+  }
   .pp-loyalty-pattern { position: absolute; inset: 0; opacity: 0.1; pointer-events: none; background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 24px 24px; }
-  .pp-loyalty-val { font-family: 'Poppins', sans-serif; font-size: 40px; font-weight: 800; line-height: 1; margin: 8px 0 0; }
-  .pp-progress-track { width: 100%; height: 12px; background: rgba(255,255,255,0.2); border-radius: 9999px; overflow: hidden; margin-top: 8px; }
-  .pp-progress-bar { height: 100%; background: ${C.secondaryContainer}; border-radius: 9999px; transition: width 1s ease-out; }
+  .pp-loyalty-val { 
+    font-family: 'Poppins', sans-serif; 
+    font-size: 48px; 
+    font-weight: 800; 
+    line-height: 1; 
+    margin: 12px 0 0;
+    font-variant-numeric: tabular-nums; 
+  }
+  .pp-loyalty-note { 
+    font-size: 14px; 
+    color: rgba(255,255,255,0.9); 
+    margin-top: 16px; 
+    font-weight: 500; 
+    background: rgba(255,255,255,0.1); 
+    padding: 12px; 
+    border-radius: 8px; 
+    backdrop-filter: blur(4px);
+  }
 
   .pp-btn { padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Poppins', sans-serif; font-size: 14px; }
   .pp-btn-primary { background: ${C.primary}; color: ${C.white}; }
@@ -117,11 +176,16 @@ const ppStyles = `
   .pp-btn-outline:hover { background: ${C.surfaceContainerLow}; }
   .pp-btn-danger { background: transparent; border: 1px solid ${C.error}; color: ${C.error}; width: 100%; }
   .pp-btn-danger:hover { background: ${C.errorContainer}; }
-  .pp-btn-gold { background: ${C.secondaryFixed}; color: ${C.secondary}; width: 100%; }
+  .pp-btn-gold { background: ${C.secondaryFixed}; color: ${C.secondary}; width: 100%; margin-top: auto; padding-top: 16px; padding-bottom: 16px; font-size: 16px;}
   .pp-btn-gold:hover { background: ${C.secondaryContainer}; }
 
   .pp-footer-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid ${C.surfaceVariant}; }
   @media (min-width: 640px) { .pp-footer-actions { flex-direction: row; justify-content: flex-end; } }
+
+  .pp-overview-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid ${C.surfaceVariant}; }
+  .pp-overview-row:last-child { border-bottom: none; }
+  .pp-overview-label { color: ${C.onSurface}; fontSize: '14px'; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .pp-overview-val { fontWeight: 700; color: ${C.primary}; fontSize: '14px'; font-variant-numeric: tabular-nums; }
 
   .pp-material { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
 `;
@@ -134,6 +198,9 @@ const ProfilePage = () => {
   const [name, setName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
   const [activeVouchers, setActiveVouchers] = useState(0);
+
+  // Animated counter hook
+  const animPoints = useCountUp(user?.points || 0, 1200);
 
   const ms = (size = 24, fill = 0) => ({
     fontFamily: "'Material Symbols Outlined'",
@@ -176,9 +243,6 @@ const ProfilePage = () => {
     navigate('/login');
   };
 
-  const targetPoints = 15000;
-  const progress = user?.points ? Math.min(100, (user.points / targetPoints) * 100) : 0;
-
   return (
     <div>
       <style>{ppStyles}</style>
@@ -220,7 +284,7 @@ const ProfilePage = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '12px', flexShrink: 0, alignItems: 'flex-start' }}>
-          <button className="pp-btn pp-btn-outline" onClick={() => navigate('/my-redemptions')}>View Rewards</button>
+          <button className="pp-btn pp-btn-outline" onClick={() => navigate('/my-redemptions')}>View Redemptions</button>
         </div>
       </header>
 
@@ -312,52 +376,48 @@ const ProfilePage = () => {
           {/* Loyalty & Points */}
           <div className="pp-loyalty-card">
             <div className="pp-loyalty-pattern"></div>
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
               <h3 style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.secondaryFixed, margin: 0 }}>Current Balance</h3>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span className="pp-loyalty-val">{user?.points?.toLocaleString() || 0}</span>
+                <span className="pp-loyalty-val">{animPoints}</span>
                 <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '24px', opacity: 0.8 }}>pts</span>
               </div>
 
-              <div style={{ marginTop: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>
-                  <span>{user?.role || 'Gold'} Tier</span>
-                  <span style={{ color: C.secondaryFixed }}>{targetPoints.toLocaleString()} for Platinum</span>
-                </div>
-                <div className="pp-progress-track">
-                  <div className="pp-progress-bar" style={{ width: `${progress}%` }}></div>
-                </div>
-                <p style={{ fontSize: '12px', opacity: 0.7, margin: '8px 0 0' }}>
-                  {(targetPoints - (user?.points || 0)).toLocaleString()} points until Platinum status
-                </p>
-              </div>
-
-              <button
-                className="pp-btn pp-btn-gold"
-                style={{ marginTop: '24px' }}
-                onClick={() => navigate('/vouchers')}
-              >
-                <span className="pp-material">redeem</span>
-                Redeem Points
-              </button>
             </div>
+
+            <button
+              className="pp-btn pp-btn-gold"
+              onClick={() => navigate('/vouchers')}
+            >
+              <span className="pp-material">redeem</span>
+              Redeem Points
+            </button>
           </div>
 
           {/* Account Overview */}
           <div className="pp-card">
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: C.onSurfaceVariant, margin: '0 0 16px 0' }}>Account Overview</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: C.onSurface, fontSize: '14px' }}>Active Vouchers</span>
-                <span style={{ fontWeight: 700, color: C.primary, fontSize: '14px' }}>{activeVouchers}</span>
+            <h4 style={{ fontSize: '16px', fontWeight: 700, color: C.primary, margin: '0 0 16px 0' }}>Account Overview</h4>
+            <div>
+              <div className="pp-overview-row">
+                <span className="pp-overview-label">
+                  <span className="pp-material" style={{ fontSize: '20px', color: C.primary }}>confirmation_number</span>
+                  Active Vouchers
+                </span>
+                <span className="pp-overview-val">{activeVouchers}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: C.onSurface, fontSize: '14px' }}>Total Earned</span>
-                <span style={{ fontWeight: 700, color: C.primary, fontSize: '14px' }}>{user?.points?.toLocaleString() || 0} pts</span>
+              <div className="pp-overview-row">
+                <span className="pp-overview-label">
+                  <span className="pp-material" style={{ fontSize: '20px', color: C.primary }}>star</span>
+                  Lifetime Points
+                </span>
+                <span className="pp-overview-val">{user?.points?.toLocaleString() || 0} pts</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: C.onSurface, fontSize: '14px' }}>Referral Code</span>
-                <span style={{ fontWeight: 700, color: C.secondary, fontSize: '14px', fontFamily: 'monospace' }}>{user?.referralCode || 'N/A'}</span>
+              <div className="pp-overview-row">
+                <span className="pp-overview-label">
+                  <span className="pp-material" style={{ fontSize: '20px', color: C.primary }}>card_giftcard</span>
+                  Referral Code
+                </span>
+                <span className="pp-overview-val" style={{ color: C.secondary, fontFamily: 'monospace' }}>{user?.referralCode || 'N/A'}</span>
               </div>
             </div>
           </div>

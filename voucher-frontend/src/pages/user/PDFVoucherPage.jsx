@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { redemptionAPI } from '../../services/api';
 import { formatDate, formatDiscount } from '../../utils/helpers';
-import { UserBreadcrumb } from '../../components/layout/UserPageChrome';
 
 /* ── Design tokens ─────────────────────────────────────────────── */
 const C = {
@@ -31,6 +30,15 @@ const C = {
   onSecondaryContainer: '#715300',
 };
 
+const ms = (size = 24, fill = 0) => ({
+  fontFamily: "'Material Symbols Outlined'",
+  fontSize: size,
+  fontVariationSettings: `"FILL" ${fill}, "wght" 400, "GRAD" 0, "opsz" 24`,
+  lineHeight: 1,
+  display: 'inline-block',
+  verticalAlign: 'middle',
+});
+
 const PDFVoucherPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -44,19 +52,9 @@ const PDFVoucherPage = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
-
   const handleDownloadPDF = () => {
     window.print();
   };
-
-  const ms = (size = 24, fill = 0) => ({
-    fontFamily: "'Material Symbols Outlined'",
-    fontSize: size,
-    fontVariationSettings: `"FILL" ${fill}, "wght" 400, "GRAD" 0, "opsz" 24`,
-    lineHeight: 1,
-    display: 'inline-block',
-    verticalAlign: 'middle',
-  });
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -72,7 +70,7 @@ const PDFVoucherPage = () => {
     }
   };
 
-  /* ── Skeleton loader ─────────────────────────────────────────── */
+  /* ── Skeleton loader ── */
   if (loading) {
     return (
       <div style={{ background: C.surfaceLow, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: "'Inter', sans-serif" }}>
@@ -105,80 +103,97 @@ const PDFVoucherPage = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '48px 24px',
+      padding: '32px 24px 64px',
       fontFamily: "'Inter', sans-serif",
       color: C.onSurface,
     }}>
 
-      {/* ═══ Top Action Row: Breadcrumb & Buttons ═══ */}
-      <div className="pp-no-print" style={{ 
-        width: '100%', 
-        maxWidth: 820, 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 28,
-        flexWrap: 'wrap',
-        gap: 16,
+      {/* ═══ Breadcrumb ═══ */}
+      <nav className="pp-no-print" style={{
+        width: '100%',
+        maxWidth: 820,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 20,
+        fontSize: 13,
+        fontWeight: 500,
+        color: C.onSurfaceVariant,
       }}>
-        <UserBreadcrumb
-          compact
-          items={[
-            { label: 'My Redemptions', path: '/my-redemptions' },
-            { label: redemption.redemptionCode || 'Voucher' },
-          ]}
-        />
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{ all: 'unset', color: C.primary, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
+        >
+          <span style={ms(16, 0)}>home</span>
+          Home
+        </button>
+        <span style={{ color: C.outlineVariant }}>/</span>
+        <button
+          onClick={() => navigate('/my-redemptions')}
+          style={{ all: 'unset', color: C.primary, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+        >
+          My Redemptions
+        </button>
+        <span style={{ color: C.outlineVariant }}>/</span>
+        <span style={{ color: C.onSurface, fontWeight: 600 }}>{redemption.redemptionCode || 'Voucher'}</span>
+      </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Back Button */}
-          <button
-            onClick={() => navigate('/my-redemptions')}
-            className="pp-btn-ghost"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              background: 'transparent',
-              color: C.onSurfaceVariant,
-              borderRadius: 10,
-              border: `1px solid ${C.outlineVariant}`,
-              cursor: 'pointer',
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 500,
-              fontSize: 13,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <span style={ms(18)}>arrow_back</span>
-            <span>Back</span>
-          </button>
+      {/* ═══ Action Buttons ═══ */}
+      <div className="pp-no-print pp-action-row" style={{
+        width: '100%',
+        maxWidth: 820,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 24,
+      }}>
+        <button
+          onClick={() => navigate('/my-redemptions')}
+          className="pp-btn-ghost"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 18px',
+            background: C.surfaceLowest,
+            color: C.onSurfaceVariant,
+            borderRadius: 10,
+            border: `1px solid ${C.outlineVariant}`,
+            cursor: 'pointer',
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
+            fontSize: 13,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <span style={ms(18)}>arrow_back</span>
+          Back
+        </button>
 
-          {/* Download PDF Button */}
-          <button
-            onClick={handleDownloadPDF}
-            className="pp-btn-primary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 20px',
-              background: C.primary,
-              color: C.onPrimary,
-              borderRadius: 10,
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: 13,
-              transition: 'all 0.2s ease',
-              boxShadow: '0px 2px 8px rgba(2, 36, 72, 0.15)',
-            }}
-          >
-            <span style={ms(18, 1)}>picture_as_pdf</span>
-            <span>Download PDF</span>
-          </button>
-        </div>
+        <button
+          onClick={handleDownloadPDF}
+          className="pp-btn-primary"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 22px',
+            background: C.primary,
+            color: C.onPrimary,
+            borderRadius: 10,
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
+            fontSize: 13,
+            transition: 'all 0.2s ease',
+            boxShadow: '0px 2px 8px rgba(2, 36, 72, 0.15)',
+          }}
+        >
+          <span style={ms(18, 1)}>picture_as_pdf</span>
+          Download PDF
+        </button>
       </div>
 
       {/* ═══ Main Voucher Document ═══ */}
@@ -215,7 +230,7 @@ const PDFVoucherPage = () => {
           style={{
             width: '33.33%',
             background: `linear-gradient(180deg, ${C.primary} 0%, ${C.primaryContainer} 100%)`,
-            padding: 36,
+            padding: 32,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -228,10 +243,10 @@ const PDFVoucherPage = () => {
         >
           {/* Brand header */}
           <div style={{ width: '100%', textAlign: 'center' }}>
-            <span style={{ 
-              fontFamily: "'Poppins', sans-serif", 
-              fontSize: 18, 
-              fontWeight: 700, 
+            <span style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: 18,
+              fontWeight: 700,
               color: '#fff',
               letterSpacing: '0.02em',
             }}>
@@ -240,19 +255,19 @@ const PDFVoucherPage = () => {
           </div>
 
           {/* Merchant visual */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
             width: '100%',
-            margin: '32px 0',
+            margin: '24px 0',
           }}>
             <div style={{
-              width: 120,
-              height: 120,
+              width: 110,
+              height: 110,
               borderRadius: '50%',
               background: '#fff',
-              padding: 12,
+              padding: 10,
               boxShadow: '0px 8px 32px rgba(0,0,0,0.2)',
               border: `3px solid ${C.secondaryContainer}`,
               display: 'flex',
@@ -263,14 +278,14 @@ const PDFVoucherPage = () => {
               {v.image ? (
                 <img src={v.image} alt="Merchant" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
-                <span style={{ ...ms(48, 1), color: C.primary }}>storefront</span>
+                <span style={{ ...ms(44, 1), color: C.primary }}>storefront</span>
               )}
             </div>
 
             <h2 style={{
-              marginTop: 20,
+              marginTop: 18,
               fontFamily: "'Poppins', sans-serif",
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: 600,
               color: '#fff',
               lineHeight: 1.3,
@@ -296,20 +311,20 @@ const PDFVoucherPage = () => {
 
           {/* Footer details */}
           <div style={{ textAlign: 'center' }}>
-            <p style={{ 
-              fontSize: 12, 
-              color: 'rgba(255,255,255,0.7)', 
-              fontWeight: 500 
+            <p style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.7)',
+              fontWeight: 500,
             }}>
               Issued: {formatDate(redemption.createdAt)}
             </p>
-            <div style={{ 
-              marginTop: 20, 
+            <div style={{
+              marginTop: 16,
               opacity: 0.4,
               display: 'flex',
               justifyContent: 'center',
             }}>
-              <span style={ms(40, 1)}>verified</span>
+              <span style={ms(36, 1)}>verified</span>
             </div>
           </div>
 
@@ -332,7 +347,7 @@ const PDFVoucherPage = () => {
           className="pp-value-side"
           style={{
             width: '66.66%',
-            padding: 36,
+            padding: 32,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -340,16 +355,15 @@ const PDFVoucherPage = () => {
             zIndex: 1,
           }}
         >
-          {/* ── Header row: Voucher Number | Expires ── */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'flex-start', 
-            marginBottom: 28,
-            flexWrap: 'wrap',
+          {/* ── Header row: Voucher Number | Status & Expires ── */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 24,
             gap: 16,
           }}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h3 style={{
                 fontSize: 11,
                 color: C.outline,
@@ -363,38 +377,41 @@ const PDFVoucherPage = () => {
               </h3>
               <div style={{
                 fontFamily: "'Poppins', sans-serif",
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: 700,
                 color: C.primary,
                 letterSpacing: '0.08em',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}>
                 {redemption.redemptionCode}
               </div>
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 4,
+                gap: 5,
                 marginTop: 8,
                 background: statusInfo.bg,
                 color: statusInfo.color,
-                padding: '3px 10px',
+                padding: '4px 10px',
                 borderRadius: 6,
                 fontSize: 10,
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
               }}>
-                <span style={{ 
-                  width: 6, 
-                  height: 6, 
-                  borderRadius: '50%', 
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
                   background: statusInfo.color,
                   display: 'inline-block',
                 }} />
                 {statusInfo.label}
               </span>
             </div>
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <h3 style={{
                 fontSize: 11,
                 color: C.outline,
@@ -407,7 +424,7 @@ const PDFVoucherPage = () => {
                 Expires
               </h3>
               <div style={{
-                fontSize: 14,
+                fontSize: 13,
                 color: C.error,
                 fontWeight: 700,
                 fontFamily: "'Inter', sans-serif",
@@ -425,17 +442,17 @@ const PDFVoucherPage = () => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 28,
+              padding: 24,
               background: C.surfaceLow,
               borderRadius: 12,
               border: `1px solid ${C.outlineVariant}`,
-              marginBottom: 28,
+              marginBottom: 24,
             }}
           >
             <div style={{
-              width: 180,
-              height: 180,
-              padding: 12,
+              width: 160,
+              height: 160,
+              padding: 10,
               background: '#fff',
               border: `2px solid ${C.primary}`,
               borderRadius: 12,
@@ -465,12 +482,12 @@ const PDFVoucherPage = () => {
                     position: 'relative',
                   }}
                 >
-                  <div style={{ 
-                    background: '#fff', 
-                    padding: 12, 
-                    borderRadius: 8, 
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)', 
-                    zIndex: 1 
+                  <div style={{
+                    background: '#fff',
+                    padding: 12,
+                    borderRadius: 8,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    zIndex: 1,
                   }}>
                     <span style={{ ...ms(36, 1), color: C.primary }}>qr_code_2</span>
                   </div>
@@ -478,7 +495,7 @@ const PDFVoucherPage = () => {
               )}
             </div>
             <p style={{
-              marginTop: 16,
+              marginTop: 14,
               fontSize: 12,
               color: C.outline,
               fontWeight: 500,
@@ -499,49 +516,49 @@ const PDFVoucherPage = () => {
               backgroundImage: `linear-gradient(to right, ${C.outlineVariant} 50%, transparent 50%)`,
               backgroundSize: '12px 1px',
               backgroundRepeat: 'repeat-x',
-              margin: '0 0 24px',
+              margin: '0 0 20px',
             }}
           />
 
           {/* ── Instructions Grid ── */}
-          <div className="pp-bento-grid" style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
+          <div className="pp-bento-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
             gap: 16,
             flex: 1,
           }}>
             {/* How to Use */}
-            <div style={{ 
-              padding: 20, 
-              borderRadius: 12, 
-              background: C.surfaceLow, 
+            <div style={{
+              padding: 18,
+              borderRadius: 12,
+              background: C.surfaceLow,
               border: `1px solid ${C.surfaceHighest}`,
               display: 'flex',
               flexDirection: 'column',
             }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 8, 
-                marginBottom: 12, 
-                color: C.primary 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 10,
+                color: C.primary,
               }}>
                 <span style={ms(18, 1)}>info</span>
-                <h4 style={{ 
-                  fontSize: 11, 
-                  fontWeight: 700, 
-                  textTransform: 'uppercase', 
-                  margin: 0, 
-                  letterSpacing: '0.08em' 
+                <h4 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  letterSpacing: '0.08em',
                 }}>
                   How to Use
                 </h4>
               </div>
-              <ul style={{ 
-                fontSize: 12, 
-                color: C.onSurfaceVariant, 
-                paddingLeft: 18, 
-                margin: 0, 
+              <ul style={{
+                fontSize: 12,
+                color: C.onSurfaceVariant,
+                paddingLeft: 18,
+                margin: 0,
                 lineHeight: 1.8,
                 flex: 1,
               }}>
@@ -552,36 +569,36 @@ const PDFVoucherPage = () => {
             </div>
 
             {/* Terms */}
-            <div style={{ 
-              padding: 20, 
-              borderRadius: 12, 
-              background: C.surfaceLow, 
+            <div style={{
+              padding: 18,
+              borderRadius: 12,
+              background: C.surfaceLow,
               border: `1px solid ${C.surfaceHighest}`,
               display: 'flex',
               flexDirection: 'column',
             }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 8, 
-                marginBottom: 12, 
-                color: C.primary 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 10,
+                color: C.primary,
               }}>
                 <span style={ms(18, 1)}>gavel</span>
-                <h4 style={{ 
-                  fontSize: 11, 
-                  fontWeight: 700, 
-                  textTransform: 'uppercase', 
-                  margin: 0, 
-                  letterSpacing: '0.08em' 
+                <h4 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  letterSpacing: '0.08em',
                 }}>
                   Terms & Conditions
                 </h4>
               </div>
-              <p style={{ 
-                fontSize: 12, 
-                color: C.onSurfaceVariant, 
-                lineHeight: 1.8, 
+              <p style={{
+                fontSize: 12,
+                color: C.onSurfaceVariant,
+                lineHeight: 1.8,
                 margin: 0,
                 flex: 1,
               }}>
@@ -592,17 +609,18 @@ const PDFVoucherPage = () => {
 
           {/* ── Footer ── */}
           <div style={{
-            marginTop: 24,
-            paddingTop: 20,
+            marginTop: 20,
+            paddingTop: 16,
             borderTop: `1px solid ${C.outlineVariant}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-end',
+            gap: 12,
           }}>
-            <div>
-              <p style={{ 
-                fontSize: 10, 
-                color: C.outline, 
+            <div style={{ minWidth: 0 }}>
+              <p style={{
+                fontSize: 10,
+                color: C.outline,
                 marginBottom: 4,
                 fontWeight: 500,
                 textTransform: 'uppercase',
@@ -610,30 +628,35 @@ const PDFVoucherPage = () => {
               }}>
                 Verification Hash
               </p>
-              <code style={{ 
-                fontSize: 10, 
-                color: C.outlineVariant, 
-                fontFamily: "'Courier New', monospace" 
+              <code style={{
+                fontSize: 10,
+                color: C.outlineVariant,
+                fontFamily: "'Courier New', monospace",
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}>
                 SHA256: {redemption._id?.slice(0, 8)}...{redemption._id?.slice(-5)}
               </code>
             </div>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 8 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              flexShrink: 0,
             }}>
-              <span style={{ 
-                fontSize: 11, 
-                color: C.outline 
+              <span style={{
+                fontSize: 11,
+                color: C.outline,
               }}>
                 Powered by
               </span>
-              <span style={{ 
-                fontFamily: "'Poppins', sans-serif", 
-                fontSize: 14, 
-                fontWeight: 700, 
-                color: C.primary 
+              <span style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.primary,
               }}>
                 PointPerks
               </span>
@@ -647,6 +670,22 @@ const PDFVoucherPage = () => {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
+        .material-symbols-outlined {
+          font-family: 'Material Symbols Outlined';
+          font-weight: normal;
+          font-style: normal;
+          line-height: 1;
+          letter-spacing: normal;
+          text-transform: none;
+          display: inline-block;
+          white-space: nowrap;
+          word-wrap: normal;
+          direction: ltr;
+          -webkit-font-feature-settings: 'liga';
+          -webkit-font-smoothing: antialiased;
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
         /* ── Skeleton pulse ── */
         .pp-skeleton-pulse {
           animation: pp-pulse 1.5s infinite ease-in-out;
@@ -655,14 +694,6 @@ const PDFVoucherPage = () => {
           0%   { opacity: 0.5; }
           50%  { opacity: 0.8; }
           100% { opacity: 0.5; }
-        }
-
-        /* ── Spinner animation ── */
-        .pp-spinner {
-          animation: pp-spin 0.8s linear infinite;
-        }
-        @keyframes pp-spin {
-          to { transform: rotate(360deg); }
         }
 
         /* ── Button hover states ── */
@@ -680,9 +711,6 @@ const PDFVoucherPage = () => {
           transform: translateY(0) !important;
           box-shadow: 0px 2px 6px rgba(2, 36, 72, 0.15) !important;
         }
-        .pp-btn-primary:disabled {
-          cursor: wait !important;
-        }
 
         /* ── QR section hover ── */
         .pp-qr-section {
@@ -693,20 +721,30 @@ const PDFVoucherPage = () => {
           border-color: ${C.outline} !important;
         }
 
-        /* ── Responsive ── */
+        /* ══════════════════════════════════════════
+           Responsive
+           ══════════════════════════════════════════ */
         @media (max-width: 768px) {
+          .pp-pdf-outer {
+            padding: 20px 16px 48px !important;
+          }
+
+          .pp-action-row {
+            justify-content: flex-start !important;
+          }
+
           .pp-voucher-container {
             flex-direction: column !important;
           }
           .pp-stub {
             width: 100% !important;
-            padding: 28px !important;
+            padding: 28px 24px !important;
           }
           .pp-value-side {
             width: 100% !important;
             border-left: none !important;
             border-top: 2px dashed ${C.outlineVariant} !important;
-            padding: 28px !important;
+            padding: 24px !important;
           }
           .pp-cutout-right,
           .pp-perforation-line {
@@ -715,11 +753,17 @@ const PDFVoucherPage = () => {
           .pp-bento-grid {
             grid-template-columns: 1fr !important;
           }
-          
-          /* Mobile top row wraps cleanly */
-          .pp-no-print {
+        }
+
+        @media (max-width: 480px) {
+          .pp-action-row {
             flex-direction: column !important;
-            align-items: flex-start !important;
+            gap: 8px !important;
+          }
+          .pp-action-row .pp-btn-ghost,
+          .pp-action-row .pp-btn-primary {
+            width: 100%;
+            justify-content: center;
           }
         }
 
@@ -729,7 +773,9 @@ const PDFVoucherPage = () => {
           .pp-cutout-right     { display: block !important; }
         }
 
-        /* ── Print styles ── */
+        /* ══════════════════════════════════════════
+           Print styles
+           ══════════════════════════════════════════ */
         @media print {
           @page {
             size: A4 portrait;
@@ -739,18 +785,15 @@ const PDFVoucherPage = () => {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
 
-          /* Hide everything on the page */
           body * {
             visibility: hidden !important;
           }
 
-          /* Show only the voucher card and all its children */
           .pp-voucher-container,
           .pp-voucher-container * {
             visibility: visible !important;
           }
 
-          /* Pin the voucher to fill the page */
           .pp-voucher-container {
             position: fixed !important;
             inset: 0 !important;
@@ -765,7 +808,6 @@ const PDFVoucherPage = () => {
             print-color-adjust: exact !important;
           }
 
-          /* Preserve gradient background on left stub */
           .pp-stub {
             background: linear-gradient(180deg, ${C.primary} 0%, ${C.primaryContainer} 100%) !important;
             -webkit-print-color-adjust: exact !important;

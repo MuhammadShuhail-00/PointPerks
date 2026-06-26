@@ -84,35 +84,55 @@ const AddEditVoucher = () => {
   const [saving, setSaving]   = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
-  /* ── Fixed sidebar positioning ── */
-  const sidebarPlaceholderRef = useRef(null);
-  const [fixedStyle, setFixedStyle] = useState(null);
+  /* ── Refs for fixed sidebar positioning ── */
+  const mainLayoutRef = useRef(null);
+  const [sidebarStyle, setSidebarStyle] = useState(null);
 
+  /*
+   * Dynamically calculate where the fixed sidebar should sit.
+   * Key insight: layoutRect.top + window.scrollY = header height,
+   * which works regardless of scroll position or header size.
+   */
   useLayoutEffect(() => {
     if (loading) return;
 
     const calc = () => {
-      if (!sidebarPlaceholderRef.current) return;
-      const r = sidebarPlaceholderRef.current.getBoundingClientRect();
-      setFixedStyle((prev) => {
+      // On tablet/mobile, use normal flow (no fixed positioning)
+      if (window.innerWidth <= 1024) {
+        setSidebarStyle(null);
+        return;
+      }
+      if (!mainLayoutRef.current) return;
+
+      // Measure how far the main layout is from the document top = header height
+      const layoutRect = mainLayoutRef.current.getBoundingClientRect();
+      const topBelowHeader = layoutRect.top + window.scrollY;
+
+      // Measure placeholder for left-alignment
+      const placeholder = mainLayoutRef.current.querySelector('[data-sidebar-placeholder]');
+      if (!placeholder) return;
+      const pr = placeholder.getBoundingClientRect();
+
+      setSidebarStyle((prev) => {
         const next = {
           position: 'fixed',
-          top: 28,
-          left: r.left,
+          top: topBelowHeader,
+          left: pr.left,
           width: 340,
           zIndex: 20,
         };
-        if (prev && prev.left === next.left && prev.top === next.top && prev.width === next.width) return prev;
+        // Avoid unnecessary re-renders when values haven't changed
+        if (prev && prev.top === next.top && prev.left === next.left && prev.width === next.width) return prev;
         return next;
       });
     };
 
     calc();
     window.addEventListener('resize', calc);
-    window.addEventListener('scroll', calc, { passive: true, capture: true });
+    window.addEventListener('scroll', calc, { passive: true });
     return () => {
       window.removeEventListener('resize', calc);
-      window.removeEventListener('scroll', calc, { capture: true });
+      window.removeEventListener('scroll', calc);
     };
   }, [loading]);
 
@@ -271,17 +291,74 @@ const AddEditVoucher = () => {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pp-pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .fixed-sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        .fixed-sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        .fixed-sidebar-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
-        .fixed-sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        .pp-fixed-sidebar::-webkit-scrollbar { width: 4px; }
+        .pp-fixed-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .pp-fixed-sidebar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .pp-fixed-sidebar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Tablet: stack vertically, disable fixed sidebar */
+        @media (max-width: 1024px) {
+          .pp-main-layout {
+            flex-direction: column !important;
+          }
+          .pp-sidebar-col {
+            width: 100% !important;
+            max-width: 400px !important;
+            margin: 0 auto !important;
+          }
+        }
+
+        /* Mobile: full-width form, edge-to-edge card */
+        @media (max-width: 640px) {
+          .pp-outer-wrap {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
+          .pp-form-col {
+            min-width: 0 !important;
+            width: 100% !important;
+            flex-basis: 100% !important;
+          }
+          .pp-card-form {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+          }
+          .pp-grid-2 {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .pp-card-inner {
+            padding: 16px 16px 0 !important;
+          }
+          .pp-toggles-row {
+            padding: 16px 16px 20px !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+          .pp-action-row {
+            flex-direction: column-reverse !important;
+            gap: 12px !important;
+            padding: 0 16px 16px !important;
+          }
+          .pp-action-row button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .pp-sidebar-col {
+            max-width: 100% !important;
+          }
+        }
       `}</style>
 
-      {/* ── Outer wrapper: title + grid stacked with consistent gap ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* ── Outer wrapper ── */}
+      <div className="pp-outer-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', boxSizing: 'border-box' }}>
 
         {/* Breadcrumb */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13, fontWeight: 500, color: '#43474e' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13, fontWeight: 500, color: '#43474e', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/dashboard')}
             style={{ background: 'none', border: 'none', color: '#022448', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Inter, sans-serif', transition: 'color 0.15s' }}
@@ -317,31 +394,29 @@ const AddEditVoucher = () => {
         </div>
 
         {/* ── Main Grid: form (left) + sidebar placeholder (right) ── */}
-        <div style={{ display: 'flex', flexDirection: 'row', gap: 28, alignItems: 'flex-start' }}>
+        <div className="pp-main-layout" ref={mainLayoutRef} style={{ display: 'flex', flexDirection: 'row', gap: 28, alignItems: 'flex-start' }}>
 
           {/* ═══ LEFT: Form ═══ */}
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="pp-form-col" style={{ flex: '1 1 0%', minWidth: 0 }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
 
               {/* Main Card */}
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e2e2', borderRadius: 14, boxShadow: '0 2px 16px rgba(30,58,95,0.05)', overflow: 'hidden' }}>
-                <div style={{ padding: '28px 28px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div className="pp-card-form" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e2e2', borderRadius: 14, boxShadow: '0 2px 16px rgba(30,58,95,0.05)', overflow: 'hidden', boxSizing: 'border-box', minWidth: 0 }}>
+                <div className="pp-card-inner" style={{ padding: '28px 28px 0', display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0, boxSizing: 'border-box' }}>
 
                   <SectionDivider title="Brand Details" />
 
-                  {/* Title */}
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label style={labelStyle}>Title</label>
                     <input type="text" value={form.title} onChange={setField('title')} placeholder="e.g. Starbucks, Amazon, Delta Airlines" required style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
 
-                  {/* Merchant + Category */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div>
+                  <div className="pp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Merchant</label>
                       <input type="text" value={form.merchant} onChange={setField('merchant')} placeholder="e.g. Starbucks Corporation" style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Category</label>
                       <div style={{ position: 'relative' }}>
                         <select value={form.category} onChange={setField('category')} style={{ ...inputBase, cursor: 'pointer', appearance: 'none', paddingRight: 36 }} onFocus={inputFocus} onBlur={inputBlur}>
@@ -352,17 +427,15 @@ const AddEditVoucher = () => {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label style={labelStyle}>Description</label>
                     <textarea value={form.description} onChange={setField('description')} rows={2} placeholder="Briefly describe what this voucher offers..." style={{ ...inputBase, resize: 'vertical', minHeight: 68 }} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
 
                   <SectionDivider title="Voucher Value" />
 
-                  {/* Discount Type + Value */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div>
+                  <div className="pp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Discount Type</label>
                       <div style={{ position: 'relative' }}>
                         <select value={form.discountType} onChange={setField('discountType')} style={{ ...inputBase, cursor: 'pointer', appearance: 'none', paddingRight: 36 }} onFocus={inputFocus} onBlur={inputBlur}>
@@ -371,7 +444,7 @@ const AddEditVoucher = () => {
                         <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#74777f', fontSize: 16 }}>▾</span>
                       </div>
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>{form.discountType === 'percentage' ? 'Discount (%)' : 'Voucher Value (RM)'}</label>
                       <div style={{ position: 'relative' }}>
                         <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#74777f', fontSize: 14, pointerEvents: 'none', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>
@@ -382,16 +455,15 @@ const AddEditVoucher = () => {
                     </div>
                   </div>
 
-                  {/* Original Price + Points Cost */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div>
+                  <div className="pp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Original Price (RM)</label>
                       <div style={{ position: 'relative' }}>
                         <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#74777f', fontSize: 14, pointerEvents: 'none', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>RM</span>
                         <input type="number" value={form.originalPrice ?? ''} onChange={setNum('originalPrice')} placeholder="100.00" style={{ ...inputBase, paddingLeft: 38 }} onFocus={inputFocus} onBlur={inputBlur} />
                       </div>
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Redemption Point Cost</label>
                       <div style={{ position: 'relative' }}>
                         <span className="material-symbols-outlined" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#795900', fontSize: 19, fontVariationSettings: "'FILL' 1", pointerEvents: 'none' }}>stars</span>
@@ -402,13 +474,12 @@ const AddEditVoucher = () => {
 
                   <SectionDivider title="Availability" />
 
-                  {/* Expiry + Total Limit */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div>
+                  <div className="pp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Expiry Date</label>
                       <input type="date" value={form.expiryDate} onChange={setField('expiryDate')} required style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>
                         Total Stock Limit
                         <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400, color: '#74777f' }}>(blank = unlimited)</span>
@@ -417,33 +488,27 @@ const AddEditVoucher = () => {
                     </div>
                   </div>
 
-                  {/* Per-User Limit */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    <div>
-                      <label style={labelStyle}>Per-User Limit</label>
-                      <input type="number" value={form.perUserLimit ?? ''} onChange={setNum('perUserLimit')} placeholder="1" min={1} style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
-                    </div>
+                  <div style={{ minWidth: 0 }}>
+                    <label style={labelStyle}>Per-User Limit</label>
+                    <input type="number" value={form.perUserLimit ?? ''} onChange={setNum('perUserLimit')} placeholder="1" min={1} style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
 
                   <SectionDivider title="Terms" />
 
-                  {/* Terms */}
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label style={labelStyle}>Terms & Conditions</label>
                     <textarea value={form.terms} onChange={setField('terms')} rows={4} placeholder="Enter specific redemption terms, blackout dates, and geographic restrictions..." style={{ ...inputBase, resize: 'vertical', minHeight: 100 }} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
 
-                </div>{/* end inner padding div */}
+                </div>
 
-                {/* Toggles */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, padding: '20px 28px 28px', marginTop: 8, borderTop: '1px solid #f0f0f0' }}>
+                <div className="pp-toggles-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 28, padding: '20px 28px 28px', marginTop: 8, borderTop: '1px solid #f0f0f0' }}>
                   <Toggle checked={form.isActive}   onChange={(val) => setForm({ ...form, isActive: val })}   label="Active"   />
                   <Toggle checked={form.isFeatured} onChange={(val) => setForm({ ...form, isFeatured: val })} label="Featured" />
                 </div>
-              </div>{/* end Main Card */}
+              </div>
 
-              {/* Action Row */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 16, paddingTop: 4 }}>
+              <div className="pp-action-row" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 16, paddingTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => navigate('/admin/vouchers')}
@@ -467,41 +532,40 @@ const AddEditVoucher = () => {
               </div>
 
             </form>
-          </div>{/* end LEFT */}
+          </div>
 
-          {/* ═══ RIGHT: Placeholder to reserve grid space ═══ */}
+          {/* ═══ RIGHT: Placeholder — reserves 340px space in the flex row ═══ */}
           <div
-            ref={sidebarPlaceholderRef}
+            data-sidebar-placeholder
+            className="pp-sidebar-col"
             style={{
               width: 340,
               flexShrink: 0,
-              visibility: fixedStyle ? 'hidden' : 'visible',
+              visibility: sidebarStyle ? 'hidden' : 'visible',
             }}
           >
-            {!fixedStyle && (
+            {!sidebarStyle && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {renderSidebarContent()}
               </div>
             )}
           </div>
 
-        </div>{/* end Main Grid */}
+        </div>
+      </div>
 
-      </div>{/* end Outer wrapper */}
-
-      {/* ═══ FIXED SIDEBAR (portaled out of grid flow) ═══ */}
-      {fixedStyle && (
+      {/* ═══ FIXED SIDEBAR — portaled outside flow, stays below header on scroll ═══ */}
+      {sidebarStyle && (
         <div
-          className="fixed-sidebar-scroll"
+          className="pp-fixed-sidebar"
           style={{
-            ...fixedStyle,
-            maxHeight: 'calc(100vh - 56px)',
+            ...sidebarStyle,
+            maxHeight: `calc(100vh - ${sidebarStyle.top}px)`,
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
             gap: 16,
-            paddingTop: 75,
-            paddingBottom: 28,
+            paddingBottom: 24,
           }}
         >
           {renderSidebarContent()}

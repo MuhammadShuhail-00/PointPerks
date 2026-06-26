@@ -303,12 +303,12 @@ const AdminDashboard = () => {
 
   /* ════ LOADING ════ */
   if (loading) return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, overflowX: 'hidden' }}>
       <style>{`@keyframes skPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+      <div className="pp-admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
         {[1,2,3,4].map((i) => <Skeleton key={i} style={{ height: 160 }} />)}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
+      <div className="pp-admin-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
         <Skeleton style={{ height: 360 }} />
         <Skeleton style={{ height: 360 }} />
       </div>
@@ -329,28 +329,52 @@ const AdminDashboard = () => {
 
   /* ══════════════════ MAIN RENDER ════════════════ */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
       <style>{`
         @keyframes skPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        .pp-chart-tooltip { opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
-        .pp-bar-wrap:hover .pp-chart-tooltip { opacity: 1; }
-        .pp-bar-fill { transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease; }
+        
+        /* ✅ Fixed Tooltip Hover Logic */
+        .pp-chart-tooltip { 
+          opacity: 0; 
+          transition: opacity 0.2s ease; 
+          pointer-events: none; 
+        }
+        .pp-bar-wrap:hover .pp-chart-tooltip { 
+          opacity: 1; 
+        }
+        .pp-bar-fill { 
+          transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease; 
+        }
+        
+        /* Mobile Friendly Overrides */
+        @media (max-width: 1024px) {
+          .pp-admin-main-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .pp-admin-stats-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+          }
+          .pp-admin-stats-grid h3 {
+            font-size: 28px !important;
+          }
+          .pp-admin-chart-area {
+            height: 200px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .pp-admin-stats-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .pp-admin-table-wrap th, 
+          .pp-admin-table-wrap td {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+        }
       `}</style>
-
-      {/* Breadcrumb */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13, fontWeight: 500, color: C.onSurfaceVariant }}>
-        <button
-          onClick={() => navigate('/dashboard')}
-          style={{ background: 'none', border: 'none', color: C.primary, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Inter, sans-serif', transition: 'color 0.15s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#1e3a5f'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = C.primary; }}
-        >
-          <span style={ms(16, 0)}>home</span>
-          Home
-        </button>
-        <span style={{ color: C.outlineVariant }}>/</span>
-        <span style={{ color: C.onSurface, fontWeight: 600 }}>Dashboard</span>
-      </nav>
 
       {/* Header */}
       <div>
@@ -363,7 +387,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stat Cards */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+      <section className="pp-admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
         {/* Total Users */}
         <div style={{ ...baseCard, borderRadius: 16, padding: 24, cursor: 'default' }} {...hoverCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -441,7 +465,7 @@ const AdminDashboard = () => {
       </section>
 
       {/* Chart + Top Vouchers */}
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'stretch' }}>
+      <section className="pp-admin-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'stretch' }}>
         {/* Redemption Trends Chart */}
         <div style={{ ...baseCard, borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
@@ -474,13 +498,39 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: isYtd ? 8 : 12, height: 240, position: 'relative', zIndex: 1, overflowX: 'auto', paddingBottom: 4, minWidth: isYtd ? chartBars.length * 48 : '100%' }}>
+            <div className="pp-admin-chart-area" style={{ display: 'flex', alignItems: 'flex-end', gap: isYtd ? 8 : 12, height: 240, position: 'relative', zIndex: 1, overflowX: 'auto', paddingBottom: 4, minWidth: isYtd ? chartBars.length * 48 : '100%' }}>
               {chartBars.map((bar, i) => (
-                <div key={i} className="pp-bar-wrap" title={`${bar.label}: ${bar.count}`} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', position: 'relative', minWidth: isYtd ? 40 : 'auto' }}>
+                <div 
+                  key={i} 
+                  className="pp-bar-wrap" 
+                  title={`${bar.label}: ${bar.count}`} 
+                  style={{ 
+                    flex: 1, 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'flex-end', 
+                    position: 'relative', 
+                    minWidth: isYtd ? 40 : 'auto',
+                    boxSizing: 'border-box', // ✅ Ensures padding doesn't stretch layout
+                    paddingTop: 28          // ✅ Reserves safe space inside for the tooltip
+                  }}
+                >
                   <div className="pp-chart-tooltip" style={{
-                    position: 'absolute', top: -32, left: '50%', transform: 'translateX(-50%)',
-                    backgroundColor: C.onSurface, color: C.white, padding: '4px 8px', borderRadius: 6,
-                    fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    position: 'absolute', 
+                    top: 0,               // ✅ Changed from -32 to 0 so it sits safely inside
+                    left: '50%', 
+                    transform: 'translateX(-50%)',
+                    backgroundColor: C.onSurface, 
+                    color: C.white, 
+                    padding: '3px 8px', 
+                    borderRadius: 6,
+                    fontSize: 11, 
+                    fontWeight: 700, 
+                    whiteSpace: 'nowrap', 
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    zIndex: 10
                   }}>
                     {bar.count}
                   </div>
@@ -512,7 +562,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Legend Footer */}
-          <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 20, paddingTop: 16, borderTop: `1px solid ${C.surfaceHigh}` }}>
+          <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 20, paddingTop: 16, borderTop: `1px solid ${C.surfaceHigh}`, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: C.primary }} />
               <span style={{ fontSize: 12, color: C.outline }}>{isYtd ? 'Current Month' : 'Today'}</span>
@@ -588,7 +638,7 @@ const AdminDashboard = () => {
 
       {/* Recent Redemptions Table */}
       <section style={{ ...baseCard, borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ padding: '24px 28px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.surfaceHigh}` }}>
+        <div style={{ padding: '24px 28px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.surfaceHigh}`, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h3 style={{ fontSize: 18, fontFamily: 'Poppins, sans-serif', fontWeight: 700, color: C.primary, margin: 0 }}>Recent Redemptions</h3>
             <p style={{ fontSize: 13, color: C.outline, margin: '4px 0 0' }}>Latest voucher redemptions across all users</p>
@@ -601,7 +651,7 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="pp-admin-table-wrap" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead>
               <tr style={{ backgroundColor: C.surface }}>
@@ -660,5 +710,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-

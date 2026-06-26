@@ -1,5 +1,4 @@
-//UserDashboard.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { voucherAPI, redemptionAPI } from '../../services/api';
@@ -71,6 +70,40 @@ const ms = (size = 24, fill = 0) => ({
   verticalAlign: 'middle',
 });
 
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1200) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+
+  useEffect(() => {
+    const numTarget = parseInt(String(target).replace(/,/g, ''), 10) || 0;
+    if (numTarget === 0) { setDisplay(0); return; }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setDisplay(numTarget); return; }
+
+    startRef.current = null;
+
+    const step = (timestamp) => {
+      if (!startRef.current) startRef.current = timestamp;
+      const elapsed = timestamp - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * numTarget));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return display.toLocaleString();
+}
+
 /* ════════════════════════════════════════════════════════ */
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -79,6 +112,9 @@ const UserDashboard = () => {
   const [recentRedemptions, setRecentRedemptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  const rawPoints = user?.points || 0;
+  const animatedPoints = useCountUp(rawPoints, 1200);
 
   useEffect(() => {
     Promise.all([
@@ -91,7 +127,6 @@ const UserDashboard = () => {
   }, []);
 
   const firstName = user?.name?.split(' ')[0] || 'User';
-  const pointsBalance = user?.points?.toLocaleString() || '0';
 
   const handleCopyCode = () => {
     const code = user?.referralCode;
@@ -103,9 +138,14 @@ const UserDashboard = () => {
     }
   };
 
+  const goToVoucher = (id) => {
+    if (id) navigate(`/vouchers/${id}`);
+  };
+
   return (
     <div>
       <style>{`
+        /* ── Interactions ── */
         .pp-pulse-btn { animation: pp-pulse-gold 2.5s infinite; transition: all 0.2s; }
         .pp-pulse-btn:hover { background: #e8b21c !important; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(212, 160, 23, 0.4) !important; }
         @keyframes pp-pulse-gold {
@@ -122,6 +162,40 @@ const UserDashboard = () => {
         .pp-carousel::-webkit-scrollbar { height: 6px; }
         .pp-carousel::-webkit-scrollbar-track { background: ${C.surfaceContainer}; border-radius: 10px; }
         .pp-carousel::-webkit-scrollbar-thumb { background: ${C.outlineVariant}; border-radius: 10px; }
+
+        /* ✅ Wallet Balance Hover Effect */
+        .pp-dash-wallet { 
+          transition: transform 0.3s cubic-bezier(0.22, 1, 0.30, 1), box-shadow 0.3s ease, filter 0.3s ease; 
+          cursor: pointer; 
+        }
+        .pp-dash-wallet:hover { 
+          transform: translateY(-6px) scale(1.01); 
+          box-shadow: 0 20px 40px rgba(2, 36, 72, 0.35); 
+          filter: brightness(1.05);
+        }
+
+        /* ✅ Mobile Grid Responsiveness */
+        .pp-dash-grid {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          gap: 24px;
+        }
+        @media (max-width: 1024px) {
+          .pp-dash-col-left, .pp-dash-col-right { 
+            grid-column: span 12 !important; 
+          }
+        }
+        @media (max-width: 640px) {
+          .pp-dash-grid { gap: 16px; }
+          .pp-dash-wallet { padding: 24px 20px !important; }
+          .pp-dash-wallet h3 { font-size: 36px !important; }
+          .pp-dash-wallet-btns { flex-direction: column; width: 100%; }
+          .pp-dash-wallet-btns button { width: 100%; justify-content: center; }
+          .pp-dash-stats { grid-template-columns: 1fr !important; }
+          .pp-dash-redemptions-head { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+          .pp-voucher-carousel-card { min-width: 280px !important; height: 200px !important; padding: 20px !important; }
+          .pp-voucher-head { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+        }
       `}</style>
 
       {/* ── Header ── */}
@@ -130,18 +204,22 @@ const UserDashboard = () => {
       </div>
 
       {/* ── Main Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }} className="pp-dash-grid">
+      <div className="pp-dash-grid">
 
         {/* ═══ LEFT COLUMN ═══ */}
         <div className="pp-dash-col-left" style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* Points Balance Card */}
-          <div style={{
-            position: 'relative', overflow: 'hidden', padding: '32px 28px', borderRadius: 16,
-            background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 60%, #2a4f7a 100%)`,
-            boxShadow: '0 12px 32px rgba(2, 36, 72, 0.25)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
+          <div
+            onClick={() => navigate('/vouchers')}
+            className="pp-dash-wallet"
+            style={{
+              position: 'relative', overflow: 'hidden', padding: '32px 28px', borderRadius: 16,
+              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 60%, #2a4f7a 100%)`,
+              boxShadow: '0 12px 32px rgba(2, 36, 72, 0.25)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
             <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, background: 'rgba(212,160,23,0.12)', borderRadius: '50%', filter: 'blur(40px)' }} />
             <div style={{ position: 'absolute', bottom: -20, left: -20, width: 100, height: 100, background: 'rgba(255,255,255,0.06)', borderRadius: '50%', filter: 'blur(30px)' }} />
 
@@ -155,16 +233,16 @@ const UserDashboard = () => {
                 </span>
               </div>
 
-              <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: C.onPrimary, margin: '0 0 4px', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                {pointsBalance}
+              <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: C.onPrimary, margin: '0 0 4px', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                {animatedPoints}
               </h3>
               <p style={{ fontWeight: 500, color: 'rgba(255,255,255,0.5)', margin: '0 0 32px', fontSize: 14, letterSpacing: '0.02em' }}>
                 Available Points
               </p>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }} className="pp-dash-wallet-btns">
                 <button
-                  onClick={() => navigate('/vouchers')}
+                  onClick={(e) => { e.stopPropagation(); navigate('/vouchers'); }}
                   className="pp-pulse-btn"
                   style={{ background: C.brandGold, color: '#1a1200', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(212,160,23,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}
                 >
@@ -172,7 +250,7 @@ const UserDashboard = () => {
                   Redeem Now
                 </button>
                 <button
-                  onClick={() => navigate('/referral')}
+                  onClick={(e) => { e.stopPropagation(); navigate('/referral'); }}
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer', borderRadius: 10, padding: '12px 20px', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   <span style={{ ...ms(18, 0) }}>group_add</span>
@@ -180,20 +258,10 @@ const UserDashboard = () => {
                 </button>
               </div>
             </div>
-
-            <div style={{ marginTop: 28, position: 'relative', zIndex: 10, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 10 }}>
-                <span style={{ color: 'rgba(255,255,255,0.5)' }}>Progress to Gold Tier</span>
-                <span style={{ color: C.brandGold, fontWeight: 700 }}>65%</span>
-              </div>
-              <div style={{ width: '100%', height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 999, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: '65%', background: `linear-gradient(90deg, ${C.brandGold}, #f0c040)`, borderRadius: 999, boxShadow: '0 0 12px rgba(212,160,23,0.4)' }} />
-              </div>
-            </div>
           </div>
 
           {/* Quick Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="pp-dash-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div style={{ ...S.uniformCard, padding: 20 }}>
               <span style={{ ...ms(24), color: C.primary, marginBottom: 8, display: 'block' }}>confirmation_number</span>
               <p style={{ fontSize: 12, color: C.onSurfaceVariant, margin: 0 }}>Total Redemptions</p>
@@ -224,7 +292,7 @@ const UserDashboard = () => {
 
         {/* ═══ RIGHT COLUMN ═══ */}
         <div className="pp-dash-col-right" style={{ gridColumn: 'span 7', ...S.uniformCard, padding: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div className="pp-dash-redemptions-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <h4 style={S.sectionTitle}>Recent Redemptions</h4>
             <button onClick={() => navigate('/my-redemptions')} style={S.textButton}>See All</button>
           </div>
@@ -247,20 +315,20 @@ const UserDashboard = () => {
               {recentRedemptions.map((r) => (
                 <div
                   key={r._id}
-                  onClick={() => navigate('/my-redemptions')}
+                  onClick={() => goToVoucher(r.voucher?._id || r.voucherId)}
                   className="pp-redemption-item"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: C.surface, borderRadius: 8, cursor: 'pointer', border: '1px solid transparent' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: C.surface, borderRadius: 8, cursor: 'pointer', border: '1px solid transparent', gap: 12 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: `${C.primary}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: `${C.primary}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <span style={{ ...ms(24), color: C.primary }}>confirmation_number</span>
                     </div>
-                    <div>
-                      <p style={{ fontWeight: 700, color: C.primary, margin: 0, fontSize: 15 }}>{r.voucher?.title || 'Unknown Voucher'}</p>
-                      <p style={{ fontSize: 12, color: C.onSurfaceVariant, margin: '4px 0 0', fontFamily: 'monospace' }}>Code: {r.redemptionCode}</p>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, color: C.primary, margin: 0, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.voucher?.title || 'Unknown Voucher'}</p>
+                      <p style={{ fontSize: 12, color: C.onSurfaceVariant, margin: '4px 0 0', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Code: {r.redemptionCode}</p>
                     </div>
                   </div>
-                  <span style={{ background: C.successBg, color: C.success, fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Success</span>
+                  <span style={{ background: C.successBg, color: C.success, fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', flexShrink: 0 }}>Success</span>
                 </div>
               ))}
             </div>
@@ -269,7 +337,7 @@ const UserDashboard = () => {
 
         {/* ═ BOTTOM: Featured Vouchers ═ */}
         <div style={{ gridColumn: 'span 12', marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+          <div className="pp-voucher-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
             <div>
               <h4 style={S.sectionTitle}>Featured Vouchers</h4>
               <p style={{ color: C.onSurfaceVariant, fontSize: 14, margin: '4px 0 0' }}>Hand-picked rewards available for instant redemption.</p>
@@ -293,7 +361,7 @@ const UserDashboard = () => {
               {featured.map((v) => (
                 <div
                   key={v._id}
-                  onClick={() => navigate('/vouchers')}
+                  onClick={() => goToVoucher(v._id)}
                   className="pp-voucher-carousel-card"
                   style={{ minWidth: 320, height: 224, background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryContainer} 100%)`, borderRadius: 12, padding: 24, color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer', position: 'relative', overflow: 'hidden', scrollSnapAlign: 'center', boxShadow: '0px 8px 24px rgba(2, 36, 72, 0.15)', flexShrink: 0 }}
                 >

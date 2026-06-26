@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { redemptionAPI } from '../../services/api';
@@ -31,7 +31,7 @@ const C = {
   warningBg: '#ffdfa0',
 };
 
-/* ── Shared styles (no container padding — layout handles that) ── */
+/* ── Shared styles ── */
 const styles = {
   breadcrumb: {
     display: 'flex',
@@ -92,6 +92,39 @@ const ms = (size = 20, fill = 0) => ({
   verticalAlign: 'middle',
 });
 
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1000) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+
+  useEffect(() => {
+    const numTarget = parseInt(String(target).replace(/,/g, ''), 10) || 0;
+    if (numTarget === 0) { setDisplay(0); return; }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setDisplay(numTarget); return; }
+
+    startRef.current = null;
+
+    const step = (timestamp) => {
+      if (!startRef.current) startRef.current = timestamp;
+      const elapsed = timestamp - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * numTarget));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return display.toLocaleString();
+}
+
 /* ════════════════════════════════════════════════════════ */
 const MyRedemptions = () => {
   const navigate = useNavigate();
@@ -141,6 +174,16 @@ const MyRedemptions = () => {
     }
   };
 
+  const totalCount = redemptions.length || 0;
+  const pointsSpent = redemptions
+    .filter((r) => r.status === 'active')
+    .reduce((acc, r) => acc + (r.pointsUsed || 0), 0);
+  const activeCount = redemptions.filter(r => r.status === 'active').length;
+
+  const animTotal = useCountUp(totalCount, 800);
+  const animPoints = useCountUp(pointsSpent, 1200);
+  const animActive = useCountUp(activeCount, 600);
+
   return (
     <div>
 
@@ -160,34 +203,34 @@ const MyRedemptions = () => {
         <p style={styles.subtitle}>Manage and view all your claimed rewards in one place.</p>
       </div>
 
-      {/* Stats Bar */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40, marginTop: 32 }} className="pp-stats-grid">
+      {/* Stats Bar — 3 columns */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }} className="pp-stats-grid">
         <div className="pp-stat-card" style={styles.uniformCard}>
-          <p className="pp-stat-label">Total Redeemed</p>
-          <p className="pp-stat-value">{redemptions.length || 0} Vouchers</p>
-        </div>
-        <div className="pp-stat-card" style={styles.uniformCard}>
-          <p className="pp-stat-label">Points Spent</p>
-          <p className="pp-stat-value">
-            {redemptions
-              .filter((r) => r.status === 'active')
-              .reduce((acc, r) => acc + (r.pointsUsed || 0), 0)
-              .toLocaleString()} pts
-          </p>
-        </div>
-        <div className="pp-stat-card" style={styles.uniformCard}>
-          <p className="pp-stat-label">Active Now</p>
-          <p className="pp-stat-value" style={{ color: C.secondary }}>{redemptions.filter(r => r.status === 'active').length} Vouchers</p>
-        </div>
-        <div style={{ ...styles.uniformCard, background: C.primaryContainer, color: C.onPrimary, padding: 24, border: `1px solid ${C.primary}`, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'relative', zIndex: 10 }}>
-            <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.8, margin: '0 0 4px' }}>Next Reward At</p>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 24, fontWeight: 600, margin: 0 }}>15,000 pts</p>
-            <div style={{ width: '100%', background: 'rgba(255,255,255,0.2)', height: 6, borderRadius: 999, marginTop: 12 }}>
-              <div style={{ width: '80%', background: C.secondaryFixed, height: '100%', borderRadius: 999 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.primary}08`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ ...ms(20, 1), color: C.primary }}>receipt_long</span>
             </div>
+            <p className="pp-stat-label">Total Redeemed</p>
           </div>
-          <span style={{ ...ms(80), position: 'absolute', right: -10, bottom: -10, opacity: 0.1 }}>auto_awesome</span>
+          <p className="pp-stat-value">{animTotal} <span style={{ fontSize: 14, fontWeight: 500, color: C.onSurfaceVariant }}>vouchers</span></p>
+        </div>
+        <div className="pp-stat-card" style={styles.uniformCard}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.brandGold}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ ...ms(20, 1), color: C.brandGold }}>payments</span>
+            </div>
+            <p className="pp-stat-label">Points Spent</p>
+          </div>
+          <p className="pp-stat-value">{animPoints} <span style={{ fontSize: 14, fontWeight: 500, color: C.onSurfaceVariant }}>pts</span></p>
+        </div>
+        <div className="pp-stat-card" style={styles.uniformCard}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.success}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ ...ms(20, 1), color: C.success }}>local_activity</span>
+            </div>
+            <p className="pp-stat-label">Active Now</p>
+          </div>
+          <p className="pp-stat-value" style={{ color: C.success }}>{animActive} <span style={{ fontSize: 14, fontWeight: 500, color: C.onSurfaceVariant }}>vouchers</span></p>
         </div>
       </section>
 
@@ -246,7 +289,7 @@ const MyRedemptions = () => {
           <p style={{ color: C.onSurfaceVariant, fontSize: 14, margin: 0 }}>Browse the marketplace for more rewards.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }} className="pp-red-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }} className="pp-red-grid">
           {redemptions.map((r) => {
             const statusInfo = getStatusStyle(r.status);
             const isUsed = r.status === 'used';
@@ -262,71 +305,121 @@ const MyRedemptions = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden',
-                  opacity: isUsed || isCancelled ? 0.75 : 1,
-                  filter: isUsed ? 'grayscale(0.8)' : 'none',
+                  opacity: isUsed || isCancelled ? 0.7 : 1,
+                  filter: isUsed ? 'grayscale(0.6)' : 'none',
                   transition: 'all 0.3s',
                 }}
               >
-                {/* Top Section */}
-                <div style={{ padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 8, background: C.surfaceHighest, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {/* Top colored strip */}
+                <div style={{
+                  height: 4,
+                  background: r.status === 'active'
+                    ? `linear-gradient(90deg, ${C.success}, ${C.successBg})`
+                    : `linear-gradient(90deg, ${C.outlineVariant}, ${C.surfaceHighest})`,
+                }} />
+
+                {/* Header row */}
+                <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: 12,
+                      background: isCancelled ? C.surfaceHighest : `${C.primary}06`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      border: isCancelled ? `1px dashed ${C.outlineVariant}` : 'none',
+                    }}>
                       {r.qrCodeData ? (
-                        <img src={r.qrCodeData} alt="QR" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                        <img src={r.qrCodeData} alt="QR" style={{ width: 36, height: 36, objectFit: 'contain' }} />
                       ) : (
-                        <span style={ms(24, 1)}>confirmation_number</span>
+                        <span style={{ ...ms(24, 1), color: isCancelled ? C.outline : C.primary }}>confirmation_number</span>
                       )}
                     </div>
-                    <div>
-                      <h3 style={{ fontFamily: "'Poppins', sans-serif", color: C.primary, fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{
+                        fontFamily: "'Poppins', sans-serif", color: isCancelled ? C.outline : C.primary,
+                        fontSize: 17, fontWeight: 600, margin: 0,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
                         {r.voucher?.title || 'Unknown Voucher'}
                       </h3>
-                      <p style={{ fontSize: 12, color: C.onSurfaceVariant, margin: 0 }}>
-                        Redeemed {formatDate(r.createdAt)}
+                      <p style={{ fontSize: 12, color: C.onSurfaceVariant, margin: '4px 0 0' }}>
+                        {r.voucher?.merchant || 'Unknown Merchant'} · {formatDate(r.createdAt)}
                       </p>
                     </div>
                   </div>
-                  <span style={{ background: statusInfo.bg, color: statusInfo.color, padding: '4px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{
+                    background: statusInfo.bg, color: statusInfo.color,
+                    padding: '4px 10px', borderRadius: 999, fontSize: 11,
+                    fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+                  }}>
                     <span style={ms(12, 1)}>{statusInfo.icon}</span>
                     {statusInfo.label}
                   </span>
                 </div>
 
-                {/* Middle Section */}
-                <div style={{ padding: '0 24px 24px', flexGrow: 1 }}>
-                  <p style={{ color: C.onSurfaceVariant, fontSize: 14, margin: '0 0 16px' }}>
-                    {r.voucher?.merchant}
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: C.surfaceLow, borderRadius: 8, padding: 12, border: `1px dashed ${C.outlineVariant}` }}>
-                    <span style={{ fontFamily: 'monospace', color: isCancelled ? C.outline : C.primary, fontWeight: 700, letterSpacing: '0.1em', fontSize: 14, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                {/* Code section */}
+                <div style={{ padding: '20px 24px', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: C.surfaceLow, borderRadius: 10, padding: '14px 16px',
+                    border: `1px dashed ${isCancelled ? C.outlineVariant : C.primary}30`,
+                    position: 'relative',
+                  }}>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                      color: isCancelled ? C.outline : C.primary, fontWeight: 700,
+                      letterSpacing: '0.12em', fontSize: 15,
+                      textDecoration: isCancelled ? 'line-through' : 'none',
+                    }}>
                       {r.redemptionCode}
                     </span>
-                    <button onClick={() => handleCopyCode(r.redemptionCode, r._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: copiedId === r._id ? C.success : C.primary }}>
-                      <span style={ms(20)}>{copiedId === r._id ? 'check' : 'content_copy'}</span>
+                    <button
+                      onClick={() => handleCopyCode(r.redemptionCode, r._id)}
+                      className="pp-copy-btn"
+                      style={{
+                        background: copiedId === r._id ? `${C.success}12` : C.surfaceLowest,
+                        border: `1px solid ${copiedId === r._id ? C.success : C.outlineVariant}`,
+                        borderRadius: 8, cursor: 'pointer', padding: '6px 12px',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        color: copiedId === r._id ? C.success : C.onSurfaceVariant,
+                        fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <span style={ms(16)}>{copiedId === r._id ? 'check' : 'content_copy'}</span>
+                      {copiedId === r._id ? 'Copied' : 'Copy'}
                     </button>
                   </div>
                 </div>
 
-                {/* Bottom Section */}
-                <div style={{ background: `${C.surfaceLow}50`, padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.outlineVariant}50` }}>
+                {/* Bottom actions */}
+                <div style={{
+                  background: C.surfaceLow,
+                  padding: '14px 24px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderTop: `1px solid ${C.outlineVariant}50`,
+                }}>
                   <span style={{ fontSize: 14, color: C.onSurfaceVariant }}>
-                    <span style={{ fontWeight: 700, color: C.primary }}>{r.pointsUsed?.toLocaleString() || 0}</span> points used
+                    <span style={{ fontWeight: 700, color: C.primary, fontFamily: "'Poppins', sans-serif", fontSize: 16 }}>
+                      {r.pointsUsed?.toLocaleString() || 0}
+                    </span>{' '}
+                    points redeemed
                   </span>
 
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => handleViewPDF(r._id)}
-                      className="pp-action-btn"
-                      style={{ color: C.primary, borderColor: C.outlineVariant }}
+                      className="pp-action-btn pp-action-btn--pdf"
                     >
                       <span style={ms(16)}>picture_as_pdf</span>
-                      View PDF
+                      PDF
                     </button>
                     {r.status === 'active' && (
                       <button
                         onClick={() => handleCancel(r._id)}
-                        className="pp-action-btn"
-                        style={{ color: C.error, borderColor: C.errorContainer }}
+                        className="pp-action-btn pp-action-btn--cancel"
                       >
                         <span style={ms(16)}>close</span>
                         Cancel
@@ -336,8 +429,16 @@ const MyRedemptions = () => {
                 </div>
 
                 {/* Decorative Side Cutouts */}
-                <div style={{ position: 'absolute', top: '50%', left: '-8px', transform: 'translateY(-50%)', width: 16, height: 16, background: C.surface, borderRadius: '50%', borderRight: `1px solid ${C.outlineVariant}` }} />
-                <div style={{ position: 'absolute', top: '50%', right: '-8px', transform: 'translateY(-50%)', width: 16, height: 16, background: C.surface, borderRadius: '50%', borderLeft: `1px solid ${C.outlineVariant}` }} />
+                <div style={{
+                  position: 'absolute', top: '50%', left: '-8px', transform: 'translateY(-50%)',
+                  width: 16, height: 16, background: C.surface, borderRadius: '50%',
+                  borderRight: `1px solid ${C.outlineVariant}`,
+                }} />
+                <div style={{
+                  position: 'absolute', top: '50%', right: '-8px', transform: 'translateY(-50%)',
+                  width: 16, height: 16, background: C.surface, borderRadius: '50%',
+                  borderLeft: `1px solid ${C.outlineVariant}`,
+                }} />
               </div>
             );
           })}
@@ -345,44 +446,31 @@ const MyRedemptions = () => {
       )}
 
       <style>{`
-        .pp-btn-primary {
-          background: ${C.primary};
-          color: ${C.onPrimary};
-          border: none;
-          font-family: 'Inter', sans-serif;
-          cursor: pointer;
-          transition: all 0.15s;
-          box-shadow: 0px 4px 20px rgba(30, 58, 95, 0.04);
-        }
-        .pp-btn-primary:hover {
-          background: ${C.primaryContainer};
-          box-shadow: 0 8px 24px rgba(2, 36, 72, 0.15);
-        }
-
         .pp-stat-card { padding: 24px; }
         .pp-stat-label {
           font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
           color: ${C.onSurfaceVariant};
-          margin: 0 0 4px;
+          margin: 0;
           font-weight: 600;
         }
         .pp-stat-value {
           font-family: 'Poppins', sans-serif;
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 600;
           color: ${C.primary};
           margin: 0;
+          line-height: 1.2;
         }
 
         .pp-skeleton-pulse {
           animation: pp-pulse 1.5s infinite ease-in-out;
         }
         @keyframes pp-pulse {
-          0% { opacity: 0.6; }
-          50% { opacity: 0.8; }
-          100% { opacity: 0.6; }
+          0% { opacity: 0.5; }
+          50% { opacity: 0.75; }
+          100% { opacity: 0.5; }
         }
 
         .pp-empty-state:hover {
@@ -394,33 +482,53 @@ const MyRedemptions = () => {
           box-shadow: 0px 12px 32px rgba(30, 58, 95, 0.1) !important;
         }
 
+        .pp-copy-btn:hover {
+          border-color: ${C.primary} !important;
+          color: ${C.primary} !important;
+          background: ${C.surfaceLowest} !important;
+        }
+
+        /* Restyled Action Buttons - Soft Pill Shapes */
         .pp-action-btn {
           display: flex;
           align-items: center;
-          gap: 4px;
-          background: none;
-          border: 1px solid;
-          border-radius: 6px;
-          padding: 6px 10px;
+          gap: 5px;
+          border: none;
+          border-radius: 999px;
+          padding: 8px 16px;
           font-family: 'Inter', sans-serif;
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.15s;
+          transition: all 0.2s;
         }
-        .pp-action-btn:hover {
-          background: ${C.surfaceLow};
+        .pp-action-btn--pdf {
+          background: ${C.primary}10;
+          color: ${C.primary};
+        }
+        .pp-action-btn--pdf:hover {
+          background: ${C.primary}20;
+        }
+        .pp-action-btn--cancel {
+          background: ${C.errorContainer};
+          color: ${C.error};
+        }
+        .pp-action-btn--cancel:hover {
+          background: #ffb3b3;
         }
 
         @media (max-width: 1024px) {
           .pp-stats-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: repeat(3, 1fr) !important;
           }
         }
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
           .pp-stats-grid {
             grid-template-columns: 1fr !important;
+            gap: 12px !important;
           }
+          .pp-stat-card { padding: 18px !important; }
+          .pp-stat-value { font-size: 22px !important; }
           .pp-red-grid {
             grid-template-columns: 1fr !important;
           }

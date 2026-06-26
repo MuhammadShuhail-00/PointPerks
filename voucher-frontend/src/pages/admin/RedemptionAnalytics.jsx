@@ -273,12 +273,27 @@ const RedemptionAnalytics = () => {
           from{opacity:0;transform:translateY(16px)}
           to{opacity:1;transform:translateY(0)}
         }
-        .pp-chart-tooltip { opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
-        .pp-bar-wrap:hover .pp-chart-tooltip { opacity: 1; }
+        
+        /* ✅ Fixed Tooltip Hover Logic */
+        .pp-chart-tooltip { 
+          opacity: 0; 
+          transition: opacity 0.2s ease; 
+          pointer-events: none; 
+        }
+        .pp-bar-wrap:hover .pp-chart-tooltip { 
+          opacity: 1; 
+        }
         .pp-bar-fill { transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease; }
         .pp-row-animate{opacity:0;animation:fadeInRow 0.4s ease forwards}
         .pp-cat-bar{transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
         .pp-insight-card{opacity:0;animation:fadeInUp 0.5s ease forwards}
+        
+        /* Mobile Grid Fixes */
+        @media (max-width: 768px) {
+          .pp-analytics-bottom-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       {/* Breadcrumb */}
@@ -396,11 +411,51 @@ const RedemptionAnalytics = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: isYtd ? 8 : 12, height: 280, position: 'relative', zIndex: 1, overflowX: 'auto', paddingBottom: 4, minWidth: isYtd ? chartBars.length * 48 : '100%' }}>
             {chartBars.map((bar, i) => (
-              <div key={i} className="pp-bar-wrap" style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', position: 'relative', minWidth: isYtd ? 40 : 'auto' }}>
-                <div className="pp-chart-tooltip" style={{ position: 'absolute', top: -32, left: '50%', transform: 'translateX(-50%)', backgroundColor: C.onSurface, color: C.white, padding: '4px 8px', borderRadius: 6, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+              <div 
+                key={i} 
+                className="pp-bar-wrap" 
+                style={{ 
+                  flex: 1, 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'flex-end', 
+                  position: 'relative', 
+                  minWidth: isYtd ? 40 : 'auto',
+                  boxSizing: 'border-box', // ✅ Added
+                  paddingTop: 28           // ✅ Added
+                }}
+              >
+                <div 
+                  className="pp-chart-tooltip" 
+                  style={{ 
+                    position: 'absolute', 
+                    top: 0,               // ✅ Changed from -32
+                    left: '50%', 
+                    transform: 'translateX(-50%)', 
+                    backgroundColor: C.onSurface, 
+                    color: C.white, 
+                    padding: '3px 8px', 
+                    borderRadius: 6, 
+                    fontSize: 11, 
+                    fontWeight: 700, 
+                    whiteSpace: 'nowrap', 
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    zIndex: 10          // ✅ Added
+                  }}
+                >
                   {bar.count}
                 </div>
-                <div className="pp-bar-fill" style={{ width: '100%', maxWidth: 48, height: `${bar.height}%`, backgroundColor: bar.highlight ? C.primary : C.surfaceHighest, borderRadius: '6px 6px 2px 2px', cursor: 'pointer', boxShadow: bar.highlight ? '0 4px 12px rgba(2, 36, 72, 0.2)' : 'none' }}
+                <div 
+                  className="pp-bar-fill" 
+                  style={{ 
+                    width: '100%', maxWidth: 48, height: `${bar.height}%`, 
+                    backgroundColor: bar.highlight ? C.primary : C.surfaceHighest, 
+                    borderRadius: '6px 6px 2px 2px', 
+                    cursor: 'pointer', 
+                    boxShadow: bar.highlight ? '0 4px 12px rgba(2, 36, 72, 0.2)' : 'none' 
+                  }}
                   onMouseEnter={(e) => { if(!bar.highlight) e.currentTarget.style.backgroundColor = C.outline; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = bar.highlight ? C.primary : C.surfaceHighest; }}
                 />
@@ -428,7 +483,7 @@ const RedemptionAnalytics = () => {
       </section>
 
       {/* ─── CATEGORIES + BREAKDOWN ─── */}
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <section className="pp-analytics-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Top Categories */}
         <div style={{ ...baseCard, borderRadius: 16, padding: 24 }}>
           <h3 style={{ fontSize: 16, fontFamily: 'Poppins, sans-serif', fontWeight: 700, color: C.primary, margin: '0 0 24px' }}>Top Categories</h3>

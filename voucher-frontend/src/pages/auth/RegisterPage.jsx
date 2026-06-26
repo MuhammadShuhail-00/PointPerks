@@ -80,7 +80,7 @@ const RegisterPage = () => {
   const [checkingRef, setCheckingRef] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
-  const [errorKey, setErrorKey] = useState(0); // triggers re-animation
+  const [errorKey, setErrorKey] = useState(0);
 
   // Stagger refs
   const sLogo = useStagger(0);
@@ -89,7 +89,6 @@ const RegisterPage = () => {
   const sBonus = useStagger(3);
   const sFeat1 = useStagger(4);
   const sFeat2 = useStagger(5);
-  const sFeat3 = useStagger(6);
   const sCard = useStagger(0);
   const sName = useStagger(1);
   const sEmail = useStagger(2);
@@ -200,10 +199,6 @@ const RegisterPage = () => {
                 <span style={icon(22)}>bolt</span>
                 <span>Instant Voucher Delivery</span>
               </div>
-              <div className="pp-feature pp-anim" ref={sFeat3}>
-                <span style={icon(22)}>support_agent</span>
-                <span>24 / 7 Dedicated Support</span>
-              </div>
             </div>
           </aside>
 
@@ -267,7 +262,7 @@ const RegisterPage = () => {
                       autoComplete="email"
                       value={form.email}
                       onChange={handleChange('email')}
-                      placeholder="name@institution.com"
+                      placeholder="name@email.com"
                       className="pp-input"
                     />
                   </div>
@@ -418,16 +413,7 @@ const RegisterPage = () => {
 
       {/* ── Footer ── */}
       <footer className="pp-footer">
-        <span>© {new Date().getFullYear()} PointPerks Institutional</span>
-        <nav className="pp-footer__links">
-          {['Privacy Policy', 'Terms of Service', 'Compliance', 'Contact'].map(
-            (t) => (
-              <a key={t} href="#!" onClick={(e) => e.preventDefault()}>
-                {t}
-              </a>
-            )
-          )}
-        </nav>
+        <span>© {new Date().getFullYear()} PointPerks Institutional. All rights reserved.</span>
       </footer>
 
       {/* ── Styles ── */}
@@ -583,22 +569,6 @@ const RegisterPage = () => {
           50%      { transform: scale(1.015); }
         }
 
-        /* Footer link underline sweep */
-        .pp-footer__links a {
-          position: relative;
-        }
-        .pp-footer__links a::after {
-          content: '';
-          position: absolute;
-          left: 0; bottom: -2px;
-          width: 0; height: 1.5px;
-          background: ${C.primary};
-          transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .pp-footer__links a:hover::after {
-          width: 100%;
-        }
-
         /* Input icon micro-bounce on focus */
         .pp-input:focus ~ .pp-input-icon,
         .pp-input-wrap:focus-within .pp-input-icon {
@@ -644,7 +614,6 @@ const RegisterPage = () => {
         @media (min-width: 1024px) {
           .pp-feature.pp-visible:nth-child(1) { transition-delay: 0.05s; }
           .pp-feature.pp-visible:nth-child(2) { transition-delay: 0.12s; }
-          .pp-feature.pp-visible:nth-child(3) { transition-delay: 0.19s; }
         }
 
         /* ══════════════════════════════════════════
@@ -679,13 +648,10 @@ const RegisterPage = () => {
           .pp-btn--google:hover svg {
             animation: none !important;
           }
-          .pp-footer__links a::after {
-            transition: none !important;
-          }
         }
 
         /* ══════════════════════════════════════════
-           LAYOUT & COMPONENTS (unchanged structure)
+           LAYOUT & COMPONENTS
            ══════════════════════════════════════════ */
 
         /* Ambient blobs */
@@ -1068,24 +1034,14 @@ const RegisterPage = () => {
           position: relative;
           z-index: 1;
           display: flex;
-          flex-direction: column;
+          justify-content: center;
           align-items: center;
-          gap: 12px;
           padding: 24px 16px;
           background: ${C.surfaceContainerHighest};
           border-top: 1px solid ${C.outlineVariant};
           font-size: 12px;
           color: ${C.onSurfaceVariant};
-        }
-        .pp-footer__links {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 6px 20px;
-        }
-        .pp-footer__links a {
-          color: ${C.onSurfaceVariant};
-          text-decoration: none;
+          text-align: center;
         }
 
         /* ══════════════════════════════════════════
@@ -1098,11 +1054,7 @@ const RegisterPage = () => {
           .pp-form-card__mobile-brand { display: none; }
           .pp-mobile-bonus { display: none; }
           .pp-form-card { padding: 40px 36px 32px; }
-          .pp-footer {
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 28px 40px;
-          }
+          .pp-footer { padding: 28px 40px; }
         }
 
         /* Small mobile (≤380px) */

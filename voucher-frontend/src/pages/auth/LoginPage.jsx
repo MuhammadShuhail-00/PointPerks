@@ -80,7 +80,6 @@ const LoginPage = () => {
   const sStatCard = useStagger(3);
   const sFeat1 = useStagger(4);
   const sFeat2 = useStagger(5);
-  const sFeat3 = useStagger(6);
   const sCard = useStagger(0);
   const sEmail = useStagger(1);
   const sPw = useStagger(2);
@@ -153,10 +152,6 @@ const LoginPage = () => {
                 <span style={icon(22)}>history</span>
                 <span>Full Activity Audit Trail</span>
               </div>
-              <div className="pp-feature pp-anim" ref={sFeat3}>
-                <span style={icon(22)}>support_agent</span>
-                <span>24 / 7 Dedicated Support</span>
-              </div>
             </div>
           </aside>
 
@@ -198,7 +193,7 @@ const LoginPage = () => {
                       autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@institution.com"
+                      placeholder="name@email.com"
                       className="pp-input"
                     />
                   </div>
@@ -206,14 +201,9 @@ const LoginPage = () => {
 
                 {/* Password */}
                 <div className="pp-field pp-anim" ref={sPw}>
-                  <div className="pp-label-row">
-                    <label htmlFor="login-pw" className="pp-label">
-                      Password
-                    </label>
-                    <Link to="/forgot-password" className="pp-forgot">
-                      Forgot Password?
-                    </Link>
-                  </div>
+                  <label htmlFor="login-pw" className="pp-label">
+                    Password
+                  </label>
                   <div className="pp-input-wrap">
                     <span className="pp-input-icon" style={icon(20)}>
                       lock
@@ -300,16 +290,7 @@ const LoginPage = () => {
 
       {/* ── Footer ── */}
       <footer className="pp-footer">
-        <span>© {new Date().getFullYear()} PointPerks Institutional</span>
-        <nav className="pp-footer__links">
-          {['Privacy Policy', 'Terms of Service', 'Compliance', 'Contact'].map(
-            (t) => (
-              <a key={t} href="#!" onClick={(e) => e.preventDefault()}>
-                {t}
-              </a>
-            )
-          )}
-        </nav>
+        <span>© {new Date().getFullYear()} PointPerks Institutional. All rights reserved.</span>
       </footer>
 
       {/* ── Styles ── */}
@@ -442,22 +423,6 @@ const LoginPage = () => {
           to { transform: rotate(360deg); }
         }
 
-        /* Footer link underline sweep */
-        .pp-footer__links a {
-          position: relative;
-        }
-        .pp-footer__links a::after {
-          content: '';
-          position: absolute;
-          left: 0; bottom: -2px;
-          width: 0; height: 1.5px;
-          background: ${C.primary};
-          transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .pp-footer__links a:hover::after {
-          width: 100%;
-        }
-
         /* Input icon micro-bounce on focus */
         .pp-input:focus ~ .pp-input-icon,
         .pp-input-wrap:focus-within .pp-input-icon {
@@ -503,7 +468,6 @@ const LoginPage = () => {
         @media (min-width: 1024px) {
           .pp-feature.pp-visible:nth-child(1) { transition-delay: 0.05s; }
           .pp-feature.pp-visible:nth-child(2) { transition-delay: 0.12s; }
-          .pp-feature.pp-visible:nth-child(3) { transition-delay: 0.19s; }
         }
 
         /* ══════════════════════════════════════════
@@ -534,9 +498,6 @@ const LoginPage = () => {
           }
           .pp-btn--google:hover svg {
             animation: none !important;
-          }
-          .pp-footer__links a::after {
-            transition: none !important;
           }
         }
 
@@ -757,31 +718,6 @@ const LoginPage = () => {
           color: ${C.onSurfaceVariant};
         }
 
-        .pp-label-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .pp-forgot {
-          font-size: 12px;
-          font-weight: 600;
-          color: ${C.primary};
-          text-decoration: none;
-          transition: opacity 0.12s;
-          position: relative;
-        }
-        .pp-forgot:hover { opacity: 0.75; }
-        .pp-forgot::after {
-          content: '';
-          position: absolute;
-          left: 0; bottom: -2px;
-          width: 0; height: 1px;
-          background: ${C.primary};
-          transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .pp-forgot:hover::after { width: 100%; }
-
         .pp-input-wrap {
           position: relative;
           display: flex;
@@ -922,24 +858,14 @@ const LoginPage = () => {
           position: relative;
           z-index: 1;
           display: flex;
-          flex-direction: column;
+          justify-content: center;
           align-items: center;
-          gap: 12px;
           padding: 24px 16px;
           background: ${C.surfaceContainerHighest};
           border-top: 1px solid ${C.outlineVariant};
           font-size: 12px;
           color: ${C.onSurfaceVariant};
-        }
-        .pp-footer__links {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 6px 20px;
-        }
-        .pp-footer__links a {
-          color: ${C.onSurfaceVariant};
-          text-decoration: none;
+          text-align: center;
         }
 
         /* ══════════════════════════════════════════
@@ -951,11 +877,7 @@ const LoginPage = () => {
           .pp-left { display: flex; }
           .pp-form-card__mobile-brand { display: none; }
           .pp-form-card { padding: 40px 36px 32px; }
-          .pp-footer {
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 28px 40px;
-          }
+          .pp-footer { padding: 28px 40px; }
         }
 
         /* Small mobile (≤380px) */

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userAPI } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
@@ -29,6 +29,36 @@ const C = {
   spentOrange: '#E65100',
   spentOrangeBg: '#FFF3E0',
 };
+
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1000) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+
+  useEffect(() => {
+    const numTarget = parseInt(String(target).replace(/,/g, ''), 10) || 0;
+    if (numTarget === 0) { setDisplay(0); return; }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setDisplay(numTarget); return; }
+
+    startRef.current = null;
+    const step = (timestamp) => {
+      if (!startRef.current) startRef.current = timestamp;
+      const elapsed = timestamp - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * numTarget));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return display.toLocaleString();
+}
 
 /* ── Shared styles (no container padding — layout handles that) ── */
 const styles = {
@@ -102,6 +132,11 @@ const PointsHistory = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('all');
+
+  // ✅ Animated counter hooks
+  const animCurrentPoints = useCountUp(data.currentPoints || 0, 1200);
+  const animThisMonth = useCountUp(data.thisMonth || 0, 1000);
+  const animRedeemed = useCountUp(data.redeemed || 0, 1000);
 
   const ms = (size = 24, fill = 0) => ({
     fontFamily: "'Material Symbols Outlined'",
@@ -231,8 +266,9 @@ const PointsHistory = () => {
               Current Balance
             </p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '36px', fontWeight: 700, color: C.secondaryFixed, lineHeight: 1 }}>
-                {(data.currentPoints || 0).toLocaleString()}
+              {/* ✅ Animated Count */}
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '36px', fontWeight: 700, color: C.secondaryFixed, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                {animCurrentPoints}
               </span>
               <span style={{ fontSize: '14px', fontWeight: 600, color: C.secondaryFixed, opacity: 0.8 }}>pts</span>
             </div>
@@ -252,8 +288,9 @@ const PointsHistory = () => {
               This Month
             </p>
           </div>
-          <p style={{ margin: 0, fontFamily: "'Poppins', sans-serif", fontSize: '28px', fontWeight: 700, color: C.earnedGreen }}>
-            +{(data.thisMonth || 0).toLocaleString()}
+          {/* ✅ Animated Count */}
+          <p style={{ margin: 0, fontFamily: "'Poppins', sans-serif", fontSize: '28px', fontWeight: 700, color: C.earnedGreen, fontVariantNumeric: 'tabular-nums' }}>
+            +{animThisMonth}
           </p>
           <p style={{ margin: '4px 0 0', fontSize: '12px', color: C.outline }}>Points earned</p>
         </div>
@@ -271,8 +308,9 @@ const PointsHistory = () => {
               Total Redeemed
             </p>
           </div>
-          <p style={{ margin: 0, fontFamily: "'Poppins', sans-serif", fontSize: '28px', fontWeight: 700, color: C.spentOrange }}>
-            -{(data.redeemed || 0).toLocaleString()}
+          {/* ✅ Animated Count */}
+          <p style={{ margin: 0, fontFamily: "'Poppins', sans-serif", fontSize: '28px', fontWeight: 700, color: C.spentOrange, fontVariantNumeric: 'tabular-nums' }}>
+            -{animRedeemed}
           </p>
           <p style={{ margin: '4px 0 0', fontSize: '12px', color: C.outline }}>Points spent</p>
         </div>
@@ -375,7 +413,7 @@ const PointsHistory = () => {
                     <div style={{
                       textAlign: 'right', fontWeight: 700, fontSize: '15px',
                       color: isPositive ? C.earnedGreen : C.spentOrange, whiteSpace: 'nowrap',
-                      fontFamily: "'Poppins', sans-serif"
+                      fontFamily: "'Poppins', sans-serif", fontVariantNumeric: 'tabular-nums'
                     }}>
                       {isPositive ? '+' : ''}{h.points?.toLocaleString()}
                     </div>

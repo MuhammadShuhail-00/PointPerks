@@ -43,7 +43,7 @@ const styles = {
     alignItems: 'center',
     gap: 4,
   },
-  header: { marginBottom: 32 },
+  header: { marginBottom: 28 },
   title: {
     fontFamily: "'Poppins', sans-serif",
     fontSize: 28,
@@ -54,14 +54,8 @@ const styles = {
   subtitle: {
     fontSize: 15,
     color: C.onSurfaceVariant,
-    margin: '16px 0 0',
+    margin: '8px 0 0',
     lineHeight: 1.5,
-  },
-  actionRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-    flexWrap: 'wrap',
   },
 };
 
@@ -77,8 +71,6 @@ const CATEGORIES = [
 const SORT_OPTIONS = [
   { key: 'newest', label: 'Newest' },
   { key: 'oldest', label: 'Oldest' },
-  { key: 'lowest_price', label: 'Lowest Price' },
-  { key: 'highest_price', label: 'Highest Price' },
   { key: 'lowest_points', label: 'Lowest Points' },
   { key: 'highest_points', label: 'Highest Points' },
   { key: 'az', label: 'A - Z' },
@@ -121,14 +113,10 @@ const VoucherList = () => {
         return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       case 'oldest':
         return sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      case 'lowest_price':
-        return sorted.sort((a, b) => (a.pointsCost || 0) - (b.pointsCost || 0));
-      case 'highest_price':
-        return sorted.sort((a, b) => (b.pointsCost || 0) - (a.pointsCost || 0));
       case 'lowest_points':
-        return sorted.sort((a, b) => (a.pointsRequired || 0) - (b.pointsRequired || 0));
+        return sorted.sort((a, b) => (a.pointsCost || 0) - (b.pointsCost || 0));
       case 'highest_points':
-        return sorted.sort((a, b) => (b.pointsRequired || 0) - (a.pointsRequired || 0));
+        return sorted.sort((a, b) => (b.pointsCost || 0) - (a.pointsCost || 0));
       case 'az':
         return sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       case 'za':
@@ -162,7 +150,7 @@ const VoucherList = () => {
   return (
     <div>
       <style>{`
-        .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
         /* Shimmer loading animation */
         @keyframes pp-shimmer {
@@ -170,14 +158,26 @@ const VoucherList = () => {
           100% { transform: translateX(100%); }
         }
 
-        /* Search input custom */
-        .pp-search-wrap { position: relative; flex: 1; min-width: 300px; }
+        /* Action Bar */
+        .pp-action-bar {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        /* Search input */
+        .pp-search-wrap { 
+          position: relative; 
+          flex: 1; 
+          min-width: 280px; 
+        }
         .pp-search-input {
           width: 100%;
           height: 48px;
           padding: 0 16px 0 44px;
           border-radius: 12px;
-          border: 1px solid ${C.outlineVariant};
+          border: 1.5px solid ${C.outlineVariant};
           background: ${C.white};
           font-size: 14px;
           color: ${C.onSurface};
@@ -193,11 +193,16 @@ const VoucherList = () => {
         }
 
         /* Sort dropdown */
+        .pp-sort-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
         .pp-sort-select {
           height: 48px;
-          padding: 0 40px 0 32px;
+          padding: 0 40px 0 44px;
           border-radius: 12px;
-          border: 1px solid ${C.outlineVariant};
+          border: 1.5px solid ${C.outlineVariant};
           background: ${C.white};
           font-size: 14px;
           color: ${C.primary};
@@ -208,48 +213,78 @@ const VoucherList = () => {
           appearance: none;
           -webkit-appearance: none;
           -moz-appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2343474e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 14px center;
-          padding-right: 36px;
           transition: border-color 150ms ease, box-shadow 150ms ease;
         }
         .pp-sort-select:focus {
           border-color: ${C.primary};
           box-shadow: 0 0 0 3px rgba(2, 36, 72, 0.08);
         }
+        .pp-sort-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+          color: ${C.outline};
+          font-size: 20px;
+          display: flex;
+        }
+        .pp-sort-chevron {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+          color: ${C.onSurfaceVariant};
+          font-size: 20px;
+          display: flex;
+        }
 
-        /* Category pills */
+        /* Category Pills */
+        .pp-pills-wrap {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 36px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          /* Hide scrollbar for neatness but keep functionality */
+          scrollbar-width: none; 
+          -ms-overflow-style: none;
+        }
+        .pp-pills-wrap::-webkit-scrollbar { display: none; }
+
         .pp-pill {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
+          gap: 6px;
+          padding: 10px 18px;
           border-radius: 9999px;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           transition: all 150ms ease;
           font-family: 'Inter', sans-serif;
           white-space: nowrap;
-          border: 1px solid ${C.outlineVariant};
-          background: 'transparent';
+          flex-shrink: 0;
+          border: 1.5px solid ${C.outlineVariant};
+          background: ${C.white};
           color: ${C.onSurfaceVariant};
         }
         .pp-pill:hover {
-          background: ${C.surfaceContainerLow};
+          background: ${C.surfaceLow};
           border-color: ${C.outline};
           color: ${C.onSurface};
         }
         .pp-pill-active {
-          background: ${C.surfaceContainerHighest};
-          border-color: ${C.onSurfaceVariant};
-          color: ${C.onSurface};
-          box-shadow: 0 2px 8px rgba(2, 36, 72, 0.12);
+          background: ${C.primary};
+          border-color: ${C.primary};
+          color: ${C.white};
+          box-shadow: 0 2px 8px rgba(2, 36, 72, 0.2);
         }
         .pp-pill-active:hover {
-          background: ${C.surfaceContainerHighest};
-          box-shadow: 0 4px 12px rgba(2, 36, 72, 0.2);
+          background: ${C.primaryContainer};
+          border-color: ${C.primaryContainer};
+          box-shadow: 0 4px 12px rgba(2, 36, 72, 0.25);
         }
 
         /* Skeleton cards */
@@ -281,7 +316,7 @@ const VoucherList = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 8px;
+          border-radius: 10px;
           border: 1.5px solid ${C.outlineVariant};
           background: ${C.white};
           color: ${C.onSurface};
@@ -322,7 +357,7 @@ const VoucherList = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 8px;
+          border-radius: 10px;
           border: 1.5px solid ${C.outlineVariant};
           background: ${C.white};
           color: ${C.onSurface};
@@ -352,12 +387,13 @@ const VoucherList = () => {
         .pp-page-info {
           font-size: 13px;
           color: ${C.outline};
-          margin-left: 16px;
+          margin-left: 12px;
           font-weight: 500;
         }
 
         /* Responsive */
         @media (max-width: 768px) { 
+          .pp-action-bar { flex-direction: column; align-items: stretch; }
           .pp-search-wrap { min-width: 100%; }
         }
       `}</style>
@@ -372,19 +408,21 @@ const VoucherList = () => {
         <span style={{ color: C.onSurface, fontWeight: 600 }}>Vouchers</span>
       </nav>
 
-      {/* PLAIN HEADER */}
+      {/* HEADER */}
       <div style={styles.header}>
         <h1 style={styles.title}>Available Vouchers</h1>
-        <p style={styles.subtitle}>{total} vouchers available across {CATEGORIES.length - 1} categories</p>
+        <p style={styles.subtitle}>
+          {total} vouchers available across {CATEGORIES.length - 1} categories
+        </p>
       </div>
 
       {/* ACTION BAR: Search & Sort */}
-      <div style={{ ...styles.actionRow, marginBottom: 28 }}>
+      <div className="pp-action-bar">
         {/* Search Input */}
         <div className="pp-search-wrap">
-          <span className="material-symbols-outlined" style={{ 
+          <span className="material-symbols-outlined pp-search-icon" style={{ 
             position: 'absolute', 
-            left: '16px', 
+            left: '14px', 
             top: '50%', 
             transform: 'translateY(-50%)', 
             color: C.outline, 
@@ -402,9 +440,9 @@ const VoucherList = () => {
           />
         </div>
 
-        {/* Sort By Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: C.outline }}>sort</span>
+        {/* Sort Dropdown */}
+        <div className="pp-sort-wrap">
+          <span className="material-symbols-outlined pp-sort-icon">sort</span>
           <select 
             className="pp-sort-select"
             value={sort}
@@ -414,11 +452,12 @@ const VoucherList = () => {
               <option key={opt.key} value={opt.key}>{opt.label}</option>
             ))}
           </select>
+          <span className="material-symbols-outlined pp-sort-chevron">expand_more</span>
         </div>
       </div>
 
       {/* Category Pills */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '48px', flexWrap: 'wrap' }}>
+      <div className="pp-pills-wrap">
         {CATEGORIES.map((c) => {
           const isActive = category === c.key;
           return (
@@ -427,7 +466,12 @@ const VoucherList = () => {
               onClick={() => { setCategory(c.key); setPage(0); }}
               className={`pp-pill ${isActive ? 'pp-pill-active' : ''}`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: isActive ? `'FILL' 1` : `'FILL' 0` }}>{c.icon}</span>
+              <span className="material-symbols-outlined" style={{ 
+                fontSize: '18px', 
+                fontVariationSettings: isActive ? `'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24` : `'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24` 
+              }}>
+                {c.icon}
+              </span>
               {c.label}
             </button>
           );
@@ -461,7 +505,6 @@ const VoucherList = () => {
           {/* Pagination */}
           {total > PAGE_SIZE && (
             <div className="pp-pagination">
-              {/* Previous Button */}
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
@@ -470,20 +513,13 @@ const VoucherList = () => {
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>chevron_left</span>
               </button>
 
-              {/* First Page */}
               {page > 2 && (
                 <>
-                  <button
-                    onClick={() => setPage(0)}
-                    className="pp-page-btn"
-                  >
-                    1
-                  </button>
+                  <button onClick={() => setPage(0)} className="pp-page-btn">1</button>
                   {page > 3 && <span className="pp-page-dots">...</span>}
                 </>
               )}
 
-              {/* Page Numbers */}
               {renderPageNumbers().map((p) => (
                 <button
                   key={p}
@@ -494,20 +530,13 @@ const VoucherList = () => {
                 </button>
               ))}
 
-              {/* Last Page */}
               {page < totalPages - 3 && (
                 <>
                   {page < totalPages - 4 && <span className="pp-page-dots">...</span>}
-                  <button
-                    onClick={() => setPage(totalPages - 1)}
-                    className="pp-page-btn"
-                  >
-                    {totalPages}
-                  </button>
+                  <button onClick={() => setPage(totalPages - 1)} className="pp-page-btn">{totalPages}</button>
                 </>
               )}
 
-              {/* Next Button */}
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
@@ -516,7 +545,6 @@ const VoucherList = () => {
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>chevron_right</span>
               </button>
 
-              {/* Page Info */}
               <span className="pp-page-info">
                 Page {page + 1} of {totalPages}
               </span>
