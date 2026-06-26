@@ -31,7 +31,15 @@ export const authAPI = {
   login: (data) => API.post('/auth/login', data),
   getMe: () => API.get('/auth/me'),
   logout: () => API.post('/auth/logout'),
-  googleLogin: () => { window.location.href = process.env.REACT_APP_GOOGLE_REDIRECT; },
+  googleLogin: (referralCode) => {
+    if (referralCode) {
+      localStorage.setItem('pendingReferralCode', referralCode);
+    } else {
+      localStorage.removeItem('pendingReferralCode');
+    }
+    const base = process.env.REACT_APP_GOOGLE_REDIRECT || 'http://localhost:5000/api/auth/google';
+    window.location.href = base;
+  },
 };
 
 // Vouchers
@@ -86,6 +94,7 @@ export const analyticsAPI = {
 export const referralAPI = {
   getMy: () => API.get('/referrals/my'),
   validate: (code) => API.get(`/referrals/validate/${code}`),
+  apply: (referralCode) => API.post('/referrals/apply', { referralCode }),
   getAll: () => API.get('/referrals'),
 };
 

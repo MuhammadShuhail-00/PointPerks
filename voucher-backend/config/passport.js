@@ -12,17 +12,15 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user already exists
+        // Existing user by Google ID
         let user = await User.findOne({ googleId: profile.id });
-
         if (user) {
-          // Update last login
           user.lastLogin = new Date();
           await user.save();
           return done(null, user);
         }
 
-        // Check if email already exists (link accounts)
+        // Link to existing email account
         const email = profile.emails?.[0]?.value;
         if (email) {
           user = await User.findOne({ email });
@@ -36,16 +34,16 @@ passport.use(
         }
 
         // Create new user
-        const referralCode = generateReferralCode();
+        const newReferralCode = generateReferralCode();
         const signupBonus = parseInt(process.env.SIGNUP_BONUS_POINTS) || 100;
 
         user = await User.create({
           googleId: profile.id,
           name: profile.displayName,
-          email: email,
+          email,
           avatar: profile.photos?.[0]?.value,
           role: 'user',
-          referralCode,
+          referralCode: newReferralCode,
           points: signupBonus,
           pointsHistory: [{
             type: 'earned',
