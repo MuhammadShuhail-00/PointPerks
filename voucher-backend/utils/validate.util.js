@@ -18,7 +18,7 @@ const voucherSchema = Joi.object({
   category: Joi.string().valid('food', 'shopping', 'travel', 'entertainment', 'health').required(),
   discountType: Joi.string().valid('percentage', 'fixed').required(),
   discountValue: Joi.number().min(0).required(),
-  originalPrice: Joi.number().min(0).optional(),
+  originalPrice: Joi.number().min(0).optional().allow(null),
   pointsCost: Joi.number().min(0).default(0),
   merchant: Joi.string().min(2).max(100).required(),
   merchantLogo: Joi.string().uri().optional().allow('', null),
@@ -27,10 +27,14 @@ const voucherSchema = Joi.object({
   totalLimit: Joi.number().min(1).optional().allow(null),
   perUserLimit: Joi.number().min(1).default(1),
   startDate: Joi.date().optional(),
-  expiryDate: Joi.date().greater('now').required(),
+  expiryDate: Joi.date().required(),
   isActive: Joi.boolean().default(true),
   isFeatured: Joi.boolean().default(false),
   tags: Joi.array().items(Joi.string()).optional(),
+});
+
+const createVoucherSchema = voucherSchema.keys({
+  expiryDate: Joi.date().greater('now').required(),
 });
 
 const validate = (schema) => (req, res, next) => {
@@ -43,4 +47,10 @@ const validate = (schema) => (req, res, next) => {
   next();
 };
 
-module.exports = { validate, registerSchema, loginSchema, voucherSchema };
+module.exports = {
+  validate,
+  registerSchema,
+  loginSchema,
+  voucherSchema,
+  createVoucherSchema,
+};

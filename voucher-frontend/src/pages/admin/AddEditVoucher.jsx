@@ -26,6 +26,8 @@ const EMPTY_FORM = {
   expiryDate: '', isActive: true, isFeatured: false,
 };
 
+const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
 /* ─── Custom Toggle ─── */
 const Toggle = ({ checked, onChange, label }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -166,7 +168,8 @@ const AddEditVoucher = () => {
       else        { await voucherAPI.create(payload);     toast.success('Voucher created'); }
       navigate('/admin/vouchers');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Save failed');
+      const errors = err.response?.data?.errors;
+      toast.error(Array.isArray(errors) && errors.length ? errors.join(' ') : err.response?.data?.message || 'Save failed');
     } finally {
       setSaving(false);
     }
@@ -477,7 +480,7 @@ const AddEditVoucher = () => {
                   <div className="pp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                     <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>Expiry Date</label>
-                      <input type="date" value={form.expiryDate} onChange={setField('expiryDate')} required style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
+                      <input type="date" value={form.expiryDate} onChange={setField('expiryDate')} min={isEdit ? undefined : tomorrow} required style={inputBase} onFocus={inputFocus} onBlur={inputBlur} />
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <label style={labelStyle}>
