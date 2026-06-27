@@ -1085,22 +1085,4 @@ const LandingPage = () => {
   );
 };
 
-const mobileMenuItemStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  width: '100%',
-  padding: '16px 20px',
-  background: 'transparent',
-  border: 'none',
-  borderRadius: 12,
-  fontFamily: 'Inter, sans-serif',
-  fontWeight: 600,
-  fontSize: 16,
-  color: '#1a1c1c',
-  cursor: 'pointer',
-  transition: 'background 0.15s',
-  textAlign: 'left',
-};
-
 export default LandingPage;

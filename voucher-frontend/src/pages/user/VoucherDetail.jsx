@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
@@ -294,7 +294,7 @@ const VoucherDetail = () => {
     verticalAlign: 'middle',
   });
 
-  const fetchVoucher = () => {
+  const fetchVoucher = useCallback(() => {
     setLoading(true);
     voucherAPI.getOne(id)
       .then((res) => {
@@ -303,9 +303,9 @@ const VoucherDetail = () => {
       })
       .catch(() => toast.error('Voucher not found'))
       .finally(() => setLoading(false));
-  };
+  }, [id]);
 
-  useEffect(() => { fetchVoucher(); }, [id]);
+  useEffect(() => { fetchVoucher(); }, [fetchVoucher]);
 
   const handleRedeem = async () => {
     setRedeeming(true);

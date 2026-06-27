@@ -292,15 +292,6 @@ const AdminDashboard = () => {
     onMouseLeave: (e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)'; },
   };
 
-  const ms = (size = 24, fill = 0) => ({
-    fontFamily: "'Material Symbols Outlined'",
-    fontSize: size,
-    fontVariationSettings: `"FILL" ${fill}, "wght" 400, "GRAD" 0, "opsz" 24`,
-    lineHeight: 1,
-    display: 'inline-block',
-    verticalAlign: 'middle',
-  });
-
   /* ════ LOADING ════ */
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, overflowX: 'hidden' }}>
